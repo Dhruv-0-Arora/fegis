@@ -45,13 +45,11 @@ export class AddressDetector extends ContextualDetector {
       pattern: /\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/gi,
     })
 
-    // US postal/zip codes (context-gated to reduce noise)
+    // ZIP CODE (US 5-digit or ZIP+4)
     this.addRule({
       type: 'ADDRESS',
       score: 60,
       pattern: /\b\d{5}(?:-\d{4})?\b/g,
-      dist: 40,
-      keywords: ['zip', 'postal', 'code', 'address', 'city', 'state'],
     })
   }
 }

@@ -1,5 +1,5 @@
 import type { PIIMatch, PIIType } from '../types.ts'
-import { NameDetector } from './name.ts'
+// import { NameDetector } from './name.ts' // Disabled: Name matching falls back to NER to avoid FP loops.
 import { EmailDetector } from './email.ts'
 import { PhoneDetector } from './phone.ts'
 import { FinancialDetector } from './financial.ts'
@@ -7,10 +7,11 @@ import { IdentityDetector } from './identity.ts'
 import { NetworkDetector } from './network.ts'
 import { AddressDetector } from './address.ts'
 import { LogDetector } from './log.ts'
+import { DateDetector } from './date.ts'
 import { ContextualDetector } from './base.ts'
 
 const detectorInstances = [
-  new NameDetector(),
+  // new NameDetector(),
   new EmailDetector(),
   new PhoneDetector(),
   new FinancialDetector(),
@@ -18,6 +19,7 @@ const detectorInstances = [
   new NetworkDetector(),
   new AddressDetector(),
   new LogDetector(),
+  new DateDetector(),
 ]
 
 export function buildCustomDetector(blockList: string[]): ContextualDetector | null {

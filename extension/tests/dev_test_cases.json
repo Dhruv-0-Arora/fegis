@@ -1,0 +1,72 @@
+[
+  {
+    "id": "DEV01",
+    "category": "API Keys - AWS",
+    "input": "Here is my access key for the s3 bucket: AKIAIOSFODNN7EXAMPLE and the secret is wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY.",
+    "expected_output_contains": ["[API_KEY]"],
+    "expected_masked": []
+  },
+  {
+    "id": "DEV02",
+    "category": "API Keys - Stripe",
+    "input": "The client config should use the test key pk_test_TYooMQauvdEDq54NiTphI7jx, but production needs sk_live_4eC39HqLyjWDarjtT1zdp7dc",
+    "expected_output_contains": ["[API_KEY]"],
+    "expected_masked": []
+  },
+  {
+    "id": "DEV03",
+    "category": "API Keys - GitHub",
+    "input": "I pushed the commit with my personal access token ghp_16C7e42k291932029384756abcdefghijklm",
+    "expected_output_contains": ["[API_KEY]"],
+    "expected_masked": []
+  },
+  {
+    "id": "DEV04",
+    "category": "API Keys - Google",
+    "input": "Initialize firebase with AIzaSyAww1234567890-ABCDEFGHIJKLMNOPQRSTU",
+    "expected_output_contains": ["[API_KEY]"],
+    "expected_masked": []
+  },
+  {
+    "id": "DEV05",
+    "category": "API Keys - Slack",
+    "input": "Use the bot token xoxb-123456789012-1234567890123-abc123def456ghi789jkl012 to send the message.",
+    "expected_output_contains": ["[API_KEY]"],
+    "expected_masked": []
+  },
+  {
+    "id": "DEV06",
+    "category": "Keys - RSA Private Key",
+    "input": "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA1234567890\n-----END RSA PRIVATE KEY-----",
+    "expected_output_contains": ["[API_KEY]"],
+    "expected_masked": []
+  },
+  {
+    "id": "DEV07",
+    "category": "Keys - URI with credentials",
+    "input": "mongodb+srv://admin:SuperSecret123!@cluster0.mongodb.net/test?retryWrites=true",
+    "expected_output_contains": ["[API_KEY]"],
+    "expected_masked": []
+  },
+  {
+    "id": "DEV08",
+    "category": "API Keys - Generic Password",
+    "input": "Our database prod password: SuperSecretDBPassword!234",
+    "expected_output_contains": ["[API_KEY]"],
+    "expected_masked": []
+  },
+  {
+    "id": "DEV09",
+    "category": "False Positives - Short Strings",
+    "input": "My favorite color is blue and the id is 123.",
+    "expected_output_contains": [],
+    "expected_masked": []
+  },
+  {
+    "id": "DEV10",
+    "category": "False Positives - UUID Context",
+    "input": "The request trace ID was 550e8400-e29b-41d4-a716-446655440000.",
+    "expected_output_contains": ["[ID_NUMBER]"],
+    "expected_masked": []
+  }
+]

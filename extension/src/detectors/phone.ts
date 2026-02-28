@@ -1,38 +1,64 @@
 import { ContextualDetector } from './base.ts'
 
+function phoneValidator(text: string): boolean {
+  const digits = text.replace(/\D/g, '')
+  if (digits.length < 7 || digits.length > 15) return false
+  if (/^\d{3}-\d{2}-\d{4}$/.test(text)) return false     // SSN
+  if (/^(?:19|20)\d{2}[\-./]\d{2}[\-./]\d{2}$/.test(text)) return false // ISO date
+  if (/\r|\n/.test(text)) return false                    // no cross-line
+  return true
+}
+
 export class PhoneDetector extends ContextualDetector {
   constructor() {
     super()
 
-    // International format: +1-555-123-4567, +44 20 7946 0958
+    // PHONE – NANP (North America)
     this.addRule({
       type: 'PHONE',
-      score: 85,
-      pattern: /\+\d{1,3}[\s.-]?\(?\d{1,4}\)?[\s.-]?\d{1,4}[\s.-]?\d{1,9}/g,
-      validator: (match) => {
-        const digits = match.replace(/\D/g, '')
-        return digits.length >= 7 && digits.length <= 15
-      },
+      score: 95,
+      pattern: /(?:\+?1[\s.\-]?)?\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{4}\b/g,
+      validator: phoneValidator,
     })
 
-    // US format: (555) 123-4567, 555-123-4567
+    // PHONE – EU international (+3x, +4x)
     this.addRule({
       type: 'PHONE',
-      score: 85,
-      pattern: /\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/g,
+      score: 95,
+      pattern: /\+(?:3[0-469]|4[0-9])\d{0,3}(?:[\s./_-]\d{1,12}){1,5}/g,
+      validator: phoneValidator,
     })
 
-    // Context-dependent: "phone: 5551234567"
+    // PHONE – CIS/Russia
     this.addRule({
       type: 'PHONE',
-      score: 85,
-      pattern: /\b\d{7,15}\b/g,
-      dist: 30,
-      keywords: ['phone', 'tel', 'mobile', 'cell', 'fax', 'call', 'contact', 'number'],
-      validator: (match) => {
-        const digits = match.replace(/\D/g, '')
-        return digits.length >= 7 && digits.length <= 15
-      },
+      score: 95,
+      pattern: /(?:\+7|8)[\s.\-]?\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{2}[\s.\-]?\d{2}/g,
+      validator: phoneValidator,
+    })
+
+    // PHONE – Asia international
+    this.addRule({
+      type: 'PHONE',
+      score: 95,
+      pattern: /\+(?:6[0-6]|8[1246]|9[0-8])\d{0,3}(?:[\s./_-]\d{1,12}){1,6}/g,
+      validator: phoneValidator,
+    })
+
+    // PHONE – compact E.164 (+XXXXXXXXXXX)
+    this.addRule({
+      type: 'PHONE',
+      score: 95,
+      pattern: /\+\d{10,15}\b/g,
+      validator: phoneValidator,
+    })
+
+    // PHONE – keyword-triggered (Tél:, Phone:, Cell:, Hotline:)
+    this.addRule({
+      type: 'PHONE',
+      score: 95,
+      pattern: /(?:T[ée]l|Fax|Phone|Cell|Hotline|Mobile)[\s]*:?\s*(\+?[\d\s.\-]{8,20})/gi,
+      validator: phoneValidator,
     })
   }
 }

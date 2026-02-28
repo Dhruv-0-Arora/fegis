@@ -1,0 +1,307 @@
+[
+  {
+    "id": "TC01",
+    "category": "Contact – Basic",
+    "description": "Email and US phone in a friendly message",
+    "input": "Hey, reach me at john.doe@gmail.com or call 555-867-5309 anytime.",
+    "expected_masked": ["[EMAIL]", "[PHONE]"],
+    "expected_output_contains": ["[EMAIL]", "[PHONE]"]
+  },
+  {
+    "id": "TC02",
+    "category": "Financial – Basic",
+    "description": "SSN and credit card on the same line",
+    "input": "My SSN is 123-45-6789 and my credit card is 4111 1111 1111 1111.",
+    "expected_masked": ["[SSN]", "[CREDIT_CARD]"],
+    "expected_output_contains": ["[SSN]", "[CREDIT_CARD]"]
+  },
+  {
+    "id": "TC03",
+    "category": "Identity – Basic",
+    "description": "Full name, DOB, passport number",
+    "input": "My name is Jane Smith, born on 03/15/1990, passport number AB1234567.",
+    "expected_masked": ["[NAME]", "[DATE_OF_BIRTH]", "[PASSPORT]"],
+    "expected_output_contains": ["[DATE_OF_BIRTH]", "[PASSPORT]"]
+  },
+  {
+    "id": "TC04",
+    "category": "Technical – API key",
+    "description": "OpenAI-style API key in an .env line",
+    "input": "Set OPENAI_API_KEY=sk-proj-abcdefghijklmnopqrstuvwxyzABCDEFGH123456789012 in your .env file.",
+    "expected_masked": ["[API_KEY]"],
+    "expected_output_contains": ["[API_KEY]"]
+  },
+  {
+    "id": "TC05",
+    "category": "Network – IP & URL creds",
+    "description": "IP address and URL with embedded credentials",
+    "input": "The server is at 192.168.1.105 and the repo is at https://user:p@ssw0rd@github.com/corp/private-repo.",
+    "expected_masked": ["[IP_ADDRESS]", "[URL_WITH_CREDS]"],
+    "expected_output_contains": ["[IP_ADDRESS]"]
+  },
+  {
+    "id": "TC06",
+    "category": "Medical – Basic",
+    "description": "Patient name and date of birth in medical note",
+    "input": "Patient: Robert Johnson, DOB: 07/22/1965. Diagnosis: hypertension. Prescribed Lisinopril 10mg.",
+    "expected_masked": ["[NAME]", "[DATE_OF_BIRTH]"],
+    "expected_output_contains": ["[DATE_OF_BIRTH]"]
+  },
+  {
+    "id": "TC07",
+    "category": "Mixed – Dense",
+    "description": "Multiple PII types in a paragraph",
+    "input": "Hi, I'm Alice Chen (SSN: 987-65-4321). You can email me at alice.chen@company.org or call +1 (312) 555-0199. I live at 742 Evergreen Terrace, Springfield, IL 62701.",
+    "expected_masked": ["[NAME]", "[SSN]", "[EMAIL]", "[PHONE]", "[ADDRESS]", "[ZIP_CODE]"],
+    "expected_output_contains": ["[SSN]", "[EMAIL]", "[PHONE]", "[ZIP_CODE]"]
+  },
+  {
+    "id": "TC08",
+    "category": "Clean – No PII",
+    "description": "Totally clean text — nothing should be masked",
+    "input": "What is the capital of France and why is the sky blue? Explain photosynthesis.",
+    "expected_masked": [],
+    "expected_output_contains": []
+  },
+  {
+    "id": "TC09",
+    "category": "Corporate – Org & Name",
+    "description": "Organization name and employee name",
+    "input": "I work at Acme Corporation on Project Nighthawk. Our lead engineer is Dr. Michael Torres.",
+    "expected_masked": ["[ORGANIZATION]", "[NAME]"],
+    "expected_output_contains": []
+  },
+  {
+    "id": "TC10",
+    "category": "Auth – Password & Routing",
+    "description": "Email as login, plaintext password, bank routing number",
+    "input": "My login is admin@internal.corp and password is Tr0ub4dor&3. Also my routing number is 021000021.",
+    "expected_masked": ["[EMAIL]", "[API_KEY]", "[ROUTING_NUM]"],
+    "expected_output_contains": ["[EMAIL]", "[ROUTING_NUM]"]
+  },
+  {
+    "id": "TC11",
+    "category": "Edge – Phone Formats",
+    "description": "Three different phone number formats in one message",
+    "input": "You can reach the team at (800) 555-1234, 1-888-999-0000, or +44 20 7946 0958.",
+    "expected_masked": ["[PHONE]"],
+    "expected_output_contains": ["[PHONE]"]
+  },
+  {
+    "id": "TC12",
+    "category": "Edge – Email Variants",
+    "description": "Subdomain email, plus-address, and hyphenated domain",
+    "input": "Contact support+ticket@mail.example.co.uk or dev.ops@my-company.io for help.",
+    "expected_masked": ["[EMAIL]"],
+    "expected_output_contains": ["[EMAIL]"]
+  },
+  {
+    "id": "TC13",
+    "category": "Edge – Card Formats",
+    "description": "Visa, AMEX, and Mastercard in different spacing formats",
+    "input": "Cards on file: 4111111111111111, 3782 822463 10005, and 5500-0000-0000-0004.",
+    "expected_masked": ["[CREDIT_CARD]"],
+    "expected_output_contains": ["[CREDIT_CARD]"]
+  },
+  {
+    "id": "TC14",
+    "category": "Edge – FP Trap (product codes)",
+    "description": "Phone-like product codes and numbers that are NOT PII",
+    "input": "Order part number 800-555-0000 is discontinued. The replacement part 1234567890 costs $29.99.",
+    "expected_masked": [],
+    "expected_output_contains": [],
+    "note": "Deliberate false-positive trap"
+  },
+  {
+    "id": "TC15",
+    "category": "Edge – IPv6 & Public IP",
+    "description": "IPv4 public IP and an IPv6 address",
+    "input": "Server public IP: 203.0.113.42. IPv6 loopback is ::1 and admin panel is at 2001:db8::ff00:42:8329.",
+    "expected_masked": ["[IP_ADDRESS]"],
+    "expected_output_contains": ["[IP_ADDRESS]"]
+  },
+  {
+    "id": "TC16",
+    "category": "Code – Hardcoded Secrets",
+    "description": "Python code snippet with hardcoded credentials and DB URI",
+    "input": "db = connect('postgresql://dbuser:S3cr3tP@ss@prod-db.internal:5432/customers')\napi_key = 'ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456'\nAWS_SECRET = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'",
+    "expected_masked": ["[URL_WITH_CREDS]", "[API_KEY]"],
+    "expected_output_contains": ["[API_KEY]"]
+  },
+  {
+    "id": "TC17",
+    "category": "Medical – Full Record",
+    "description": "Long doctor's note with name, SSN, DOB, address, phone",
+    "input": "PATIENT RECORD\nName: Maria Gonzalez | SSN: 456-78-9012 | DOB: 11/03/1978\nAddress: 1600 Pennsylvania Ave NW, Washington, DC 20500\nPhone: (202) 456-1111 | Email: maria.g@healthnet.org\nInsurance ID: BCB-98765431\nChief complaint: Recurring migraines since age 30. No known drug allergies. Current meds: Topiramate 50mg BID.\nPhysician: Dr. Sarah Okafor, MD | License: CA-MED-295847",
+    "expected_masked": ["[NAME]", "[SSN]", "[DATE_OF_BIRTH]", "[ADDRESS]", "[PHONE]", "[EMAIL]"],
+    "expected_output_contains": ["[SSN]", "[DATE_OF_BIRTH]", "[PHONE]", "[EMAIL]"]
+  },
+  {
+    "id": "TC18",
+    "category": "Legal – Contract",
+    "description": "Legal contract excerpt with party names, addresses, and dates",
+    "input": "This Agreement is entered into on January 14, 2025 between GlobalTech Inc., located at 500 Innovation Blvd, San Jose, CA 95110 ('Company'), and James R. Whitmore ('Contractor'), residing at 88 Maple Drive, Austin, TX 78701. Contractor's Tax ID: 98-7654321. All correspondence to contractor@whitmore-consulting.com.",
+    "expected_masked": ["[NAME]", "[ORGANIZATION]", "[ADDRESS]", "[EMAIL]"],
+    "expected_output_contains": ["[EMAIL]"]
+  },
+  {
+    "id": "TC19",
+    "category": "Social Media – Bio",
+    "description": "Twitter/LinkedIn bio with mixed personal data",
+    "input": "🚀 Software engineer @Google | MBA Harvard '18 | Living in Seattle, WA | DMs open: kobayashi.dev@proton.me | Views are my own.",
+    "expected_masked": ["[NAME]", "[EMAIL]", "[LOCATION]"],
+    "expected_output_contains": ["[EMAIL]"]
+  },
+  {
+    "id": "TC20",
+    "category": "Edge – Date Formats",
+    "description": "DOBs in slash, ISO, and written-out formats",
+    "input": "Applicant 1 DOB: 05/23/1987. Applicant 2 DOB: 1992-08-14. Applicant 3 was born on March 3rd, 1975.",
+    "expected_masked": ["[DATE_OF_BIRTH]"],
+    "expected_output_contains": ["[DATE_OF_BIRTH]"]
+  },
+  {
+    "id": "TC21",
+    "category": "Edge – Obfuscated Email",
+    "description": "Email written with AT/DOT text to evade regex",
+    "input": "Send your resume to careers AT technova DOT io, or careers[at]technova[dot]io.",
+    "expected_masked": ["[EMAIL]"],
+    "expected_output_contains": [],
+    "note": "Regex cannot catch this — only AI models should"
+  },
+  {
+    "id": "TC22",
+    "category": "Technical – JWT & Hash",
+    "description": "JWT token and SHA-256 hash that resemble API keys",
+    "input": "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzEyMyIsImV4cCI6MTcwMDAwMDAwMH0.abc123\nFile checksum (SHA-256): a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+    "expected_masked": ["[API_KEY]"],
+    "expected_output_contains": ["[API_KEY]"]
+  },
+  {
+    "id": "TC23",
+    "category": "Long – Support Ticket",
+    "description": "Realistic long customer support ticket (300+ words)",
+    "input": "Support Ticket #84921\nSubmitted: February 14, 2026\n\nCustomer: Emily Hartwell\nEmail: emily.hartwell@outlook.com\nPhone: 617-293-8845\nAccount Number: 7483920156\nMembership: Gold\n\nIssue Description:\nHi there, my name is Emily and I've been a customer since 2021. I recently moved to a new apartment at 44 Birchwood Lane, Apt 3B, Boston, MA 02134, and I need to update my billing address. Additionally, I believe there was an unauthorized charge of $149.99 on my Visa card ending in 4321 on February 10th.\n\nI've tried calling the main line (1-800-555-2020) three times but keep getting transferred. My previous support agent was Mark L. from the Chicago office — he was very helpful last time and I'd love to work with him again if possible.\n\nPlease contact me at emily.hartwell@outlook.com or text me at 617-293-8845. I am available weekdays 9am–5pm EST.\n\nThank you,\nEmily Hartwell",
+    "expected_masked": ["[NAME]", "[EMAIL]", "[PHONE]", "[ADDRESS]", "[CREDIT_CARD]"],
+    "expected_output_contains": ["[EMAIL]", "[PHONE]"]
+  },
+  {
+    "id": "TC24",
+    "category": "Long – Resume",
+    "description": "Full resume block with many PII fields (250+ words)",
+    "input": "CURRICULUM VITAE\n\nDavid K. Okonkwo\n2847 Lakeview Circle, Apt 12, Chicago, IL 60614\nPhone: (773) 882-6601  |  Email: dkokonkwo@protonmail.com  |  LinkedIn: linkedin.com/in/dkokonkwo\n\nEDUCATION\nUniversity of Michigan, Ann Arbor — B.S. Computer Science, May 2017\nGPA: 3.7/4.0\n\nEXPERIENCE\nSenior Software Engineer, Stripe Inc., San Francisco, CA (Jun 2021 – Present)\n- Built payment microservices handling $2B in monthly transactions\n- Led a team of 6 engineers across 3 time zones\n\nSoftware Engineer, Palantir Technologies, New York, NY (Jun 2017 – May 2021)\n- Worked on classified government analytics contracts\n\nSKILLS: Python, Rust, Kubernetes, AWS, PostgreSQL\n\nREFERENCES: Dr. Angela Kim (angela.kim@umich.edu, 734-555-9900), Prof. Robert Steele",
+    "expected_masked": ["[NAME]", "[EMAIL]", "[PHONE]", "[ADDRESS]"],
+    "expected_output_contains": ["[EMAIL]", "[PHONE]"]
+  },
+  {
+    "id": "TC25",
+    "category": "Long – Database Dump",
+    "description": "SQL INSERT rows with multiple user records",
+    "input": "-- users table export --\nINSERT INTO users VALUES (1, 'Hannah_Bergman', 'hannah.b@example.com', '555-310-7744', '1984-06-19', '192.0.2.55', 'sk-live-xK9mP2nRqT7vL4wJ8cY3bD6eA1');  \nINSERT INTO users VALUES (2, 'Carlos_Reyes', 'creyes@mail.mx', '(55) 1234-5678', '1991-11-27', '10.0.0.12', 'tok_prod_zZaAbBcCdDeEfFgGhHiIjJkKlL');\nINSERT INTO users VALUES (3, 'anonymous_user', NULL, NULL, NULL, '127.0.0.1', NULL);",
+    "expected_masked": ["[NAME]", "[EMAIL]", "[PHONE]", "[DATE_OF_BIRTH]", "[IP_ADDRESS]", "[API_KEY]"],
+    "expected_output_contains": ["[EMAIL]", "[IP_ADDRESS]", "[API_KEY]"]
+  },
+
+  {
+    "id": "TC26",
+    "category": "Address – Detailed",
+    "description": "Street address with apartment, city, state, ZIP",
+    "input": "Please ship to 4827 Willow Creek Rd, Suite 200, Denver, CO 80203. Billing: 91 Sunset Blvd, Los Angeles, CA 90028.",
+    "expected_masked": ["[ADDRESS]", "[ZIP_CODE]"],
+    "expected_output_contains": ["[ZIP_CODE]"]
+  },
+  {
+    "id": "TC27",
+    "category": "Address – International",
+    "description": "UK postcode, French address, Canadian postal code",
+    "input": "UK office: 15 Baker Street, London W1U 6SB. Paris team: 25 Rue de Rivoli, 75001. Canada contact: 123 Maple Ave, Toronto, ON M5V 2T6.",
+    "expected_masked": ["[ADDRESS]", "[ZIP_CODE]"],
+    "expected_output_contains": []
+  },
+  {
+    "id": "TC28",
+    "category": "Typo – Email (typo in @)",
+    "description": "Email with misspelled @ symbol as 'a' or 'at'",
+    "input": "Reach me at johndoe[at]gmail.com or john.doeatgmail.com for quick responses.",
+    "expected_masked": ["[EMAIL]"],
+    "expected_output_contains": [],
+    "note": "Regex won't match these — AI might understand intent"
+  },
+  {
+    "id": "TC29",
+    "category": "Typo – SSN spacing",
+    "description": "SSN with spaces instead of hyphens",
+    "input": "Please verify: my social security number is 456 78 9012 and my zip is 94102.",
+    "expected_masked": ["[SSN]", "[ZIP_CODE]"],
+    "expected_output_contains": ["[ZIP_CODE]"],
+    "note": "Regex pattern expects 456-78-9012 format with hyphens"
+  },
+  {
+    "id": "TC30",
+    "category": "Typo – Phone (dots as separator)",
+    "description": "Phone number written with period separators",
+    "input": "Call me anytime at 312.555.8890 or leave a voicemail at 1.800.867.5309.",
+    "expected_masked": ["[PHONE]"],
+    "expected_output_contains": ["[PHONE]"]
+  },
+  {
+    "id": "TC31",
+    "category": "Typo – Name misspelling in context",
+    "description": "Misspelled personal name used with PII context",
+    "input": "I'm Jonathon Smyth (not Smith), born 09/04/1983. My number is 503-882-4471.",
+    "expected_masked": ["[NAME]", "[DATE_OF_BIRTH]", "[PHONE]"],
+    "expected_output_contains": ["[DATE_OF_BIRTH]", "[PHONE]"]
+  },
+  {
+    "id": "TC32",
+    "category": "Typo – Credit card (missing space)",
+    "description": "Credit card number written without separators",
+    "input": "My Mastercard number is 5500000000000004 and billing ZIP is 10001.",
+    "expected_masked": ["[CREDIT_CARD]", "[ZIP_CODE]"],
+    "expected_output_contains": ["[CREDIT_CARD]", "[ZIP_CODE]"]
+  },
+  {
+    "id": "TC33",
+    "category": "Typo – IP address (typo in segment)",
+    "description": "IP written with a letter typo in the last octet",
+    "input": "Connect to the server at 10.0.0.1O (that's one-zero, not I-O) for access.",
+    "expected_masked": ["[IP_ADDRESS]"],
+    "expected_output_contains": [],
+    "note": "Typo makes it 10.0.0.1O — regex requires digits only"
+  },
+  {
+    "id": "TC34",
+    "category": "Typo – DOB written out with typo",
+    "description": "Date of birth written in natural language with a typo",
+    "input": "Date of brith: Febuary 7th, 1991. Please correct in the system if wrong.",
+    "expected_masked": ["[DATE_OF_BIRTH]"],
+    "expected_output_contains": [],
+    "note": "'brith' and 'Febuary' are intentional typos — AI may still understand"
+  },
+  {
+    "id": "TC35",
+    "category": "Typo – Mixed obfuscation",
+    "description": "Multiple fields intentionally obfuscated with typos/spaces",
+    "input": "SSN: 3 2 1 - 4 5 - 6 7 8 9. Card: 4 1 1 1  1 1 1 1  1 1 1 1  1 1 1 1. email: bob (at) secure (dot) net.",
+    "expected_masked": ["[SSN]", "[CREDIT_CARD]", "[EMAIL]"],
+    "expected_output_contains": [],
+    "note": "Spaces break regex — tests only AI models"
+  },
+  {
+    "id": "TC36",
+    "category": "Clean – FP Trap (numbers in text)",
+    "description": "Numeric-heavy technical text with no PII",
+    "input": "The algorithm ran in 3.14 seconds on 128 nodes. Memory usage peaked at 16384 MB. Version 2024.01.15 released. Error code: 404 on 3 of 10 requests.",
+    "expected_masked": [],
+    "expected_output_contains": []
+  },
+  {
+    "id": "TC37",
+    "category": "Edge – Partial/Masked Card",
+    "description": "Partially masked card number (last 4 only) — should AI still flag it?",
+    "input": "Your Visa card ending in 4321 was charged $89.99 on Feb 10. Full number on file: **** **** **** 4321.",
+    "expected_masked": [],
+    "expected_output_contains": [],
+    "note": "Partial card — not actually sensitive on its own"
+  }
+]

@@ -4,7 +4,7 @@ export class IdentityDetector extends ContextualDetector {
   constructor() {
     super()
 
-    // US Social Security Number
+    // US Social Security Number (strict dash)
     this.addRule({
       type: 'SSN',
       score: 100,
@@ -20,6 +20,15 @@ export class IdentityDetector extends ContextualDetector {
         if (serial === 0) return false
         return true
       },
+    })
+
+    // US Social Security Number (contextual)
+    this.addRule({
+      type: 'SSN',
+      score: 95,
+      pattern: /\b(\d{3})[ .](\d{2})[ .](\d{4})\b/g,
+      dist: 40,
+      keywords: ["ssn", "social", "security", "secu"],
     })
 
     // Passport numbers (context-required)
