@@ -207,6 +207,32 @@ function init() {
       scheduleHide()
     }
   })
+
+  // Click a highlighted mark → replace just that one occurrence
+  document.addEventListener('click', (e) => {
+    const mark = (e.target as HTMLElement).closest?.('.pii-shield-mark') as HTMLElement | null
+    if (!mark || !currentInputEl) return
+
+    const { type, fakeValue, original } = mark.dataset
+    if (!type || !fakeValue || !original) return
+
+    const matchIdx = currentMatches.findIndex(
+      (m) => m.text === original && m.type === (type as PIIType)
+    )
+    if (matchIdx === -1) return
+
+    const match = currentMatches[matchIdx]
+    const text = adapter.getInputText(currentInputEl)
+    const newText = text.slice(0, match.start) + fakeValue + text.slice(match.end)
+
+    // Remove from currentMatches immediately so the block-check clears
+    currentMatches = currentMatches.filter((_, i) => i !== matchIdx)
+    setCurrentMatches(currentMatches)
+
+    hideTooltip()
+    // Let the normal input → debounce → processInput cycle re-detect remaining items
+    adapter.setInputText(currentInputEl, newText)
+  }, true)
 }
 
 try {

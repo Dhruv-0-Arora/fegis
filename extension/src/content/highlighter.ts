@@ -265,15 +265,12 @@ export function showTooltip(x: number, y: number, type: PIIType, token: string, 
       Replace now
     </button>
   `
-
-  const viewW = window.innerWidth
-  const viewH = window.innerHeight
-  let left = x + 12
-  let top = y - 80
-
-  if (left + 280 > viewW) left = viewW - 290
-  if (top < 8) top = y + 20
-  if (top + 120 > viewH) top = viewH - 130
+  const TOP_OFFSET = 90
+  const SIDE_MARGIN = 10
+  const TOOLTIP_HEIGHT = 120
+  let top = y - TOP_OFFSET < SIDE_MARGIN ? y + 16 : y - TOP_OFFSET
+  const left = Math.min(x + 12, window.innerWidth - 280 - SIDE_MARGIN)
+  if (top + TOOLTIP_HEIGHT > window.innerHeight) top = window.innerHeight - TOOLTIP_HEIGHT - SIDE_MARGIN
 
   tooltipDiv.style.display = 'block'
   tooltipDiv.style.position = 'fixed'
