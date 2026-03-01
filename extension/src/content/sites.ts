@@ -167,6 +167,28 @@ const deepseekAdapter: SiteAdapter = {
   setInputText: setTextOnElement,
 }
 
+const perplexityAdapter: SiteAdapter = {
+  name: 'Perplexity',
+  isContentEditable: false,
+  getInputElement: () => querySelector([
+    'textarea[placeholder*="Ask"]',
+    'textarea[placeholder*="follow-up"]',
+    'textarea',
+  ]) || getVisibleInput(),
+  getSendButton: () => querySelector([
+    'button[aria-label="Submit"]',
+    'button[aria-label="Send"]',
+    'button[type="submit"]',
+    'button.bg-super',
+  ]),
+  getResponseContainer: () => {
+    const msgs = document.querySelectorAll<HTMLElement>('.prose, .markdown-content')
+    return msgs.length > 0 ? msgs[msgs.length - 1] : null
+  },
+  getInputText: getTextFromElement,
+  setInputText: setTextOnElement,
+}
+
 const fallbackAdapter: SiteAdapter = {
   name: 'Generic',
   isContentEditable: false,
@@ -185,5 +207,6 @@ export function detectSite(): SiteAdapter {
   if (host.includes('grok.com') || host.includes('x.com')) return grokAdapter
   if (host.includes('copilot.microsoft.com')) return copilotAdapter
   if (host.includes('chat.deepseek.com')) return deepseekAdapter
+  if (host.includes('perplexity.ai')) return perplexityAdapter
   return fallbackAdapter
 }

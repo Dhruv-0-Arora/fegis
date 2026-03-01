@@ -3,6 +3,15 @@ import { analyzeText } from '@extension/detectors/engine'
 import { tokenize, clearTokens } from '@extension/tokens/manager'
 import { generateFake } from '@extension/tokens/fake-data'
 import type { PIIMatch, PIIType } from '@extension/types'
+import * as pdfjsLib from 'pdfjs-dist'
+import mammoth from 'mammoth'
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.mjs',
+  import.meta.url,
+).toString()
+
+const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
 const DEFAULT_ENABLED_TYPES: PIIType[] = [
   'NAME', 'EMAIL', 'PHONE', 'FINANCIAL', 'SSN', 'ID', 'ADDRESS', 'SECRET', 'URL', 'DATE', 'PATH',
@@ -142,9 +151,45 @@ interface MappingEntry {
   fake: string
 }
 
+async function extractTextFromPDF(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer()
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise
+  const pages: string[] = []
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const content = await page.getTextContent()
+    const text = content.items
+      .map((item) => ('str' in item ? item.str : ''))
+      .join(' ')
+    pages.push(text)
+  }
+  return pages.join('\n\n')
+}
+
+async function extractTextFromDOCX(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer()
+  const result = await mammoth.extractRawText({ arrayBuffer: buffer })
+  return result.value
+}
+
+function extractTextFromFile(file: File): Promise<string> {
+  if (file.type === DOCX_MIME || file.name.endsWith('.docx')) {
+    return extractTextFromDOCX(file)
+  }
+  return extractTextFromPDF(file)
+}
+
+function isSupportedFile(file: File): boolean {
+  return file.type === 'application/pdf' || file.type === DOCX_MIME || file.name.endsWith('.docx')
+}
+
 export default function HeroDemo() {
+  const [mode, setMode] = useState<'text' | 'file'>('text')
   const [input, setInput] = useState('')
   const [redactMode, setRedactMode] = useState<'labels' | 'replaced'>('labels')
+  const [fileLoading, setFileLoading] = useState(false)
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
 
@@ -154,6 +199,39 @@ export default function HeroDemo() {
     if (ta && ov) {
       ov.scrollTop = ta.scrollTop
       ov.scrollLeft = ta.scrollLeft
+    }
+  }, [])
+
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setFileLoading(true)
+    setUploadedFileName(file.name)
+    try {
+      const text = await extractTextFromFile(file)
+      setInput(text)
+    } catch {
+      setInput('')
+      setUploadedFileName(null)
+    } finally {
+      setFileLoading(false)
+    }
+  }, [])
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (!file || !isSupportedFile(file)) return
+    setFileLoading(true)
+    setUploadedFileName(file.name)
+    try {
+      const text = await extractTextFromFile(file)
+      setInput(text)
+    } catch {
+      setInput('')
+      setUploadedFileName(null)
+    } finally {
+      setFileLoading(false)
     }
   }, [])
 
@@ -230,74 +308,181 @@ export default function HeroDemo() {
 
   return (
     <div className="space-y-6 text-left select-text" style={{ pointerEvents: 'auto' }}>
-      {/* Example buttons — separate from input, with blur */}
-      <div className="rounded-xl border border-[#434C5E]/60 bg-[#3B4252]/25 backdrop-blur-md p-4">
-        <p className="text-xs font-mono text-[#81A1C1] uppercase tracking-wider mb-3">Examples</p>
-        <div className="flex flex-wrap gap-2">
-          {SUGGESTIONS.map(({ label, icon, content }, i) => (
-            <button
-              key={i}
-              className={`flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 border transition-all cursor-pointer ${
-                input === content
-                  ? 'bg-[#88C0D0]/20 border-[#88C0D0] text-[#88C0D0]'
-                  : 'text-[#D8DEE9] bg-[#2E3440]/50 border-[#434C5E]/80 hover:border-[#88C0D0] hover:text-[#ECEFF4]'
-              }`}
-              onClick={() => setInput(content)}
-              title={content}
-            >
-              <span className="text-[11px]">{icon}</span>
-              {label}
-            </button>
-          ))}
+      {/* Mode toggle — Text vs File Upload */}
+      <div className="flex justify-center">
+        <div className="flex bg-[#3B4252] rounded-lg p-0.5 gap-0.5">
+          <button
+            className={`px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 ${
+              mode === 'text'
+                ? 'bg-[#88C0D0]/20 text-[#88C0D0]'
+                : 'text-[#4C566A] hover:text-[#D8DEE9]'
+            }`}
+            onClick={() => { setMode('text'); setInput(''); setUploadedFileName(null) }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+            </svg>
+            Text
+          </button>
+          <button
+            className={`px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 ${
+              mode === 'file'
+                ? 'bg-[#88C0D0]/20 text-[#88C0D0]'
+                : 'text-[#4C566A] hover:text-[#D8DEE9]'
+            }`}
+            onClick={() => { setMode('file'); setInput(''); setUploadedFileName(null) }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            File Upload
+          </button>
         </div>
       </div>
 
-      {/* Message input — separate container */}
-      <div className="rounded-2xl bg-[#2E3440]/70 backdrop-blur-md border border-[#434C5E]/80 transition-colors relative overflow-hidden">
-        {input && matches.length > 0 && (
-          <div
-            ref={overlayRef}
-            className="absolute inset-0 p-4 pr-14 rounded-2xl overflow-hidden pointer-events-none z-0 text-sm font-mono whitespace-pre-wrap break-words leading-relaxed"
-            aria-hidden
-            style={{ color: 'transparent' }}
-          >
-            <HighlightedText text={input} matches={matches} />
+      {mode === 'text' ? (
+        <>
+          {/* Example buttons */}
+          <div className="rounded-xl border border-[#434C5E]/60 bg-[#3B4252]/25 backdrop-blur-md p-4">
+            <p className="text-xs font-mono text-[#81A1C1] uppercase tracking-wider mb-3">Examples</p>
+            <div className="flex flex-wrap gap-2">
+              {SUGGESTIONS.map(({ label, icon, content }, i) => (
+                <button
+                  key={i}
+                  className={`flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 border transition-all cursor-pointer ${
+                    input === content
+                      ? 'bg-[#88C0D0]/20 border-[#88C0D0] text-[#88C0D0]'
+                      : 'text-[#D8DEE9] bg-[#2E3440]/50 border-[#434C5E]/80 hover:border-[#88C0D0] hover:text-[#ECEFF4]'
+                  }`}
+                  onClick={() => setInput(content)}
+                  title={content}
+                >
+                  <span className="text-[11px]">{icon}</span>
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
-        )}
-        <textarea
-          ref={textareaRef}
-          id="hero-demo-input"
-          className="w-full p-4 pr-14 rounded-2xl bg-transparent text-[#ECEFF4] text-sm font-mono resize-none outline-none select-text placeholder-[#4C566A] relative z-[1] caret-[#ECEFF4] whitespace-pre-wrap break-words leading-relaxed"
-          placeholder={PLACEHOLDER}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onScroll={syncScroll}
-          onInput={(e) => {
-            const el = e.target as HTMLTextAreaElement
-            el.style.height = '0'
-            el.style.height = `${Math.max(40, el.scrollHeight)}px`
-          }}
-          spellCheck={false}
-          rows={1}
-          aria-label="Type or paste text to see PII detection"
-        />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-end gap-2 z-[2]">
-          {hasPII && (
-            <span className="text-[10px] font-semibold text-[#BF616A] bg-[#BF616A]/10 px-2 py-1 rounded-full flex items-center">
-              {matches.length} PII
-            </span>
+
+          {/* Message input */}
+          <div className="rounded-2xl bg-[#2E3440]/70 backdrop-blur-md border border-[#434C5E]/80 transition-colors relative overflow-hidden">
+            {input && matches.length > 0 && (
+              <div
+                ref={overlayRef}
+                className="absolute inset-0 p-4 pr-14 rounded-2xl overflow-hidden pointer-events-none z-0 text-sm font-mono whitespace-pre-wrap break-words leading-relaxed"
+                aria-hidden
+                style={{ color: 'transparent' }}
+              >
+                <HighlightedText text={input} matches={matches} />
+              </div>
+            )}
+            <textarea
+              ref={textareaRef}
+              id="hero-demo-input"
+              className="w-full p-4 pr-14 rounded-2xl bg-transparent text-[#ECEFF4] text-sm font-mono resize-none outline-none select-text placeholder-[#4C566A] relative z-[1] caret-[#ECEFF4] whitespace-pre-wrap break-words leading-relaxed"
+              placeholder={PLACEHOLDER}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onScroll={syncScroll}
+              onInput={(e) => {
+                const el = e.target as HTMLTextAreaElement
+                el.style.height = '0'
+                el.style.height = `${Math.max(40, el.scrollHeight)}px`
+              }}
+              spellCheck={false}
+              rows={1}
+              aria-label="Type or paste text to see PII detection"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-end gap-2 z-[2]">
+              {hasPII && (
+                <span className="text-[10px] font-semibold text-[#BF616A] bg-[#BF616A]/10 px-2 py-1 rounded-full flex items-center">
+                  {matches.length} PII
+                </span>
+              )}
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                  input.trim() ? 'bg-[#88C0D0] text-[#2E3440]' : 'bg-[#3B4252] text-[#4C566A]'
+                }`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 2L11 13" /><path d="M22 2L15 22L11 13L2 9L22 2Z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        /* File Upload mode */
+        <div
+          className={`rounded-2xl border-2 border-dashed transition-colors bg-[#2E3440]/70 backdrop-blur-md p-8 text-center ${
+            fileLoading ? 'border-[#EBCB8B]' : uploadedFileName ? 'border-[#A3BE8C]' : 'border-[#434C5E]/80 hover:border-[#88C0D0]'
+          }`}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleDrop}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          {fileLoading ? (
+            <div className="space-y-3">
+              <div className="w-10 h-10 mx-auto border-2 border-[#EBCB8B] border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-[#EBCB8B] font-mono">Extracting text from file...</p>
+            </div>
+          ) : uploadedFileName ? (
+            <div className="space-y-3">
+              <div className="w-12 h-12 mx-auto rounded-xl bg-[#A3BE8C]/15 flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A3BE8C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <polyline points="9 15 11 17 15 13" />
+                </svg>
+              </div>
+              <p className="text-sm text-[#A3BE8C] font-mono font-semibold">{uploadedFileName}</p>
+              <p className="text-xs text-[#4C566A]">{matches.length} PII item{matches.length !== 1 ? 's' : ''} detected</p>
+              <button
+                className="text-xs text-[#81A1C1] hover:text-[#88C0D0] font-mono underline underline-offset-2 cursor-pointer"
+                onClick={() => { setInput(''); setUploadedFileName(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
+              >
+                Upload another file
+              </button>
+            </div>
+          ) : (
+            <div
+              className="space-y-3 cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <div className="w-12 h-12 mx-auto rounded-xl bg-[#88C0D0]/10 flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#88C0D0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              </div>
+              <p className="text-sm text-[#D8DEE9] font-mono">Drop a file here or <span className="text-[#88C0D0] underline underline-offset-2">browse</span></p>
+              <p className="text-xs text-[#4C566A]">PDF and DOCX files</p>
+            </div>
           )}
-          <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-              input.trim() ? 'bg-[#88C0D0] text-[#2E3440]' : 'bg-[#3B4252] text-[#4C566A]'
-            }`}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 2L11 13" /><path d="M22 2L15 22L11 13L2 9L22 2Z" />
-            </svg>
-          </div>
         </div>
-      </div>
+      )}
+
+      {/* Extracted text preview for file mode */}
+      {mode === 'file' && input && (
+        <div className="rounded-xl border border-[#434C5E]/60 bg-[#3B4252]/25 backdrop-blur-md p-4 max-h-48 overflow-y-auto">
+          <p className="text-xs font-mono text-[#81A1C1] uppercase tracking-wider mb-2">Extracted Text</p>
+          <p className="text-xs font-mono text-[#D8DEE9]/70 whitespace-pre-wrap break-words leading-relaxed">
+            <HighlightedText text={input} matches={matches} />
+          </p>
+        </div>
+      )}
 
       {/* View mode toggle + output — separate from input */}
       {input.trim() && (
