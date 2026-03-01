@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:zip": "cd ../extension && npm run build:ext && cd ../website && mkdir -p public/downloads && cd ../extension/dist && zip -r ../../website/public/downloads/fegis-extension.zip .",
     "lint": "eslint .",
     "preview": "vite preview"
   },
