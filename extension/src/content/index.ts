@@ -1,9 +1,9 @@
 import { detectSite } from './sites.ts'
 import { analyzeText } from '../detectors/engine.ts'
-import { createHighlightLayer, renderHighlights, cleanup, showTooltip, hideTooltip, scheduleHide, setOnReplace, setReplaceCallback, updateInspectPanelData, hideInspectPanel, resetActiveMode, clearHighlightsOnly } from './highlighter.ts'
+import { createHighlightLayer, renderHighlights, cleanup, showTooltip, scheduleHide, setReplaceCallback, updateInspectPanelData, hideInspectPanel, resetActiveMode, clearHighlightsOnly } from './highlighter.ts'
 import { setCurrentMatches, setupInterceptor, setupResponseUnmasking } from './interceptor.ts'
 import { watchForInput, stopWatching } from './observer.ts'
-import { loadTokenMap, loadReplacementMap, getFakeReplacement, saveReplacementMap, saveTokenMap, getTokenMap, getReplacementMap, getTokenForMatch } from '../tokens/manager.ts'
+import { loadTokenMap, loadReplacementMap, getFakeReplacement, saveReplacementMap, saveTokenMap, getTokenMap, getReplacementMap, getTokenForMatch, getKnownFakeValues } from '../tokens/manager.ts'
 import type { PIIMatch, ExtensionSettings, PIIType } from '../types.ts'
 
 let enabled = true
@@ -56,46 +56,33 @@ function getInputText(el: HTMLElement): string {
   return el.innerText || el.textContent || ''
 }
 
-function setInputText(el: HTMLElement, text: string) {
-  if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) {
-    const setter = Object.getOwnPropertyDescriptor(
-      window.HTMLTextAreaElement.prototype, 'value'
-    )?.set || Object.getOwnPropertyDescriptor(
-      window.HTMLInputElement.prototype, 'value'
-    )?.set
-    if (setter) setter.call(el, text)
-    else el.value = text
-    el.dispatchEvent(new Event('input', { bubbles: true }))
-  } else {
-    el.innerText = text
-    el.dispatchEvent(new Event('input', { bubbles: true }))
-  }
-}
-
-function replaceMatch(token: string, original: string, _type: PIIType) {
-  if (!currentInputEl || dead) return
-  const text = getInputText(currentInputEl)
-  const idx = text.indexOf(original)
-  if (idx === -1) return
-
-  const newText = text.substring(0, idx) + token + text.substring(idx + original.length)
-  setInputText(currentInputEl, newText)
-  saveTokenMap()
-  lastProcessedText = ''
-  processInput(currentInputEl)
-}
-
 function processInput(el: HTMLElement) {
   if (!enabled || dead) return
 
-  const text = getInputText(el)
+  let text = getInputText(el)
   if (text === lastProcessedText) return
-  lastProcessedText = text
 
   if (storedOriginalText !== null) {
+    const replacedText = lastProcessedText
+    let restoredText: string
+
+    if (text.length > replacedText.length && text.startsWith(replacedText)) {
+      restoredText = storedOriginalText + text.slice(replacedText.length)
+    } else if (text.length > replacedText.length && text.endsWith(replacedText)) {
+      restoredText = text.slice(0, text.length - replacedText.length) + storedOriginalText
+    } else {
+      restoredText = storedOriginalText
+    }
+
     storedOriginalText = null
     storedMatches = []
     resetActiveMode()
+
+    text = restoredText
+    lastProcessedText = text
+    adapter.setInputText(el, text)
+  } else {
+    lastProcessedText = text
   }
 
   if (!text.trim()) {
@@ -106,7 +93,9 @@ function processInput(el: HTMLElement) {
     return
   }
 
-  const matches = analyzeText(text, enabledTypes, customBlockList)
+  const rawMatches = analyzeText(text, enabledTypes, customBlockList)
+  const knownFakes = getKnownFakeValues()
+  const matches = rawMatches.filter(m => !knownFakes.has(m.text))
   currentMatches = matches
   renderHighlights(text, matches)
   setCurrentMatches(matches)
@@ -125,12 +114,22 @@ function debouncedProcess(el: HTMLElement) {
   debounceTimer = setTimeout(() => processInput(el), 200)
 }
 
-function handleModeSwitch(mode: 'labels' | 'replaced') {
+function handleModeSwitch(mode: 'original' | 'labels' | 'replaced') {
   if (!currentInputEl) return
 
   if (storedOriginalText === null) {
     storedOriginalText = getInputText(currentInputEl)
     storedMatches = [...currentMatches]
+  }
+
+  if (mode === 'original') {
+    lastProcessedText = storedOriginalText
+    currentMatches = [...storedMatches]
+    adapter.setInputText(currentInputEl, storedOriginalText)
+    renderHighlights(storedOriginalText, storedMatches)
+    setCurrentMatches(currentMatches)
+    updateInspectPanelData(storedOriginalText, storedMatches, getTokenMap(), getReplacementMap())
+    return
   }
 
   if (storedMatches.length === 0) return
@@ -146,6 +145,8 @@ function handleModeSwitch(mode: 'labels' | 'replaced') {
   }
 
   clearHighlightsOnly()
+  currentMatches = []
+  setCurrentMatches([])
   lastProcessedText = result
   adapter.setInputText(currentInputEl, result)
   saveTokenMap()
@@ -183,8 +184,6 @@ function init() {
 
   loadTokenMap()
   loadReplacementMap()
-
-  setOnReplace(replaceMatch)
 
   safeSendMessage({ action: 'GET_SETTINGS' }, (res) => {
     const r = res as { settings?: ExtensionSettings } | undefined
@@ -226,32 +225,6 @@ function init() {
       scheduleHide()
     }
   })
-
-  // Click a highlighted mark → replace just that one occurrence
-  document.addEventListener('click', (e) => {
-    const mark = (e.target as HTMLElement).closest?.('.pii-shield-mark') as HTMLElement | null
-    if (!mark || !currentInputEl) return
-
-    const { type, fakeValue, original } = mark.dataset
-    if (!type || !fakeValue || !original) return
-
-    const matchIdx = currentMatches.findIndex(
-      (m) => m.text === original && m.type === (type as PIIType)
-    )
-    if (matchIdx === -1) return
-
-    const match = currentMatches[matchIdx]
-    const text = adapter.getInputText(currentInputEl)
-    const newText = text.slice(0, match.start) + fakeValue + text.slice(match.end)
-
-    // Remove from currentMatches immediately so the block-check clears
-    currentMatches = currentMatches.filter((_, i) => i !== matchIdx)
-    setCurrentMatches(currentMatches)
-
-    hideTooltip()
-    // Let the normal input → debounce → processInput cycle re-detect remaining items
-    adapter.setInputText(currentInputEl, newText)
-  }, true)
 }
 
 try {

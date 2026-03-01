@@ -1,4 +1,4 @@
-/* Minimal base – Fehgis template controls layout. Ensure page can scroll. */
+/* Minimal base — Nord theme. Fehgis template controls layout. */
 html {
   overflow-y: scroll;
   overflow-x: hidden;
@@ -7,4 +7,6 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  background-color: #2E3440;
+  color: #ECEFF4;
 }

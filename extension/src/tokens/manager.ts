@@ -24,6 +24,10 @@ export function getReplacementMap(): Record<string, string> {
   return { ...replacementMap }
 }
 
+export function getKnownFakeValues(): Set<string> {
+  return new Set(Object.values(replacementMap))
+}
+
 export function setReplacementMap(map: Record<string, string>) {
   replacementMap = { ...map }
 }

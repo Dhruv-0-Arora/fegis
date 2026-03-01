@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import type { ExtensionSettings, TokenMap, PIIType } from '../types.ts'
+import { useState, useEffect } from 'react'
+import type { ExtensionSettings, PIIType } from '../types.ts'
 import { useApi } from '../context.tsx'
 
 const DEFAULT_SETTINGS: ExtensionSettings = {
@@ -23,46 +23,16 @@ const PII_TYPE_LABELS: Record<PIIType, string> = {
   PATH: 'File Paths',
 }
 
-const TYPE_COLORS: Record<PIIType, string> = {
-  NAME: '#5e81ac',
-  EMAIL: '#ebcb8b',
-  PHONE: '#b48ead',
-  FINANCIAL: '#bf616a',
-  SSN: '#bf616a',
-  ID: '#d08770',
-  ADDRESS: '#8fbcbb',
-  SECRET: '#bf616a',
-  URL: '#81a1c1',
-  DATE: '#a3be8c',
-  CUSTOM: '#d08770',
-  PATH: '#10b981',
-}
-
 function App() {
   const api = useApi()
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS)
-  const [sessionTokenMap, setSessionTokenMap] = useState<TokenMap>({})
-  const [sessionReplacementMap, setSessionReplacementMap] = useState<Record<string, string>>({})
   const [customTerm, setCustomTerm] = useState('')
-  const [settingsOpen, setSettingsOpen] = useState(false)
-
-  const refreshSession = useCallback(() => {
-    api.getTokenMap((res) => {
-      if (res?.tokenMap) setSessionTokenMap(res.tokenMap)
-    })
-    api.getReplacementMap((res) => {
-      if (res?.replacementMap) setSessionReplacementMap(res.replacementMap)
-    })
-  }, [api])
 
   useEffect(() => {
     api.getSettings((res) => {
       if (res?.settings) setSettings(res.settings)
     })
-    refreshSession()
-    const interval = setInterval(refreshSession, 2000)
-    return () => clearInterval(interval)
-  }, [api, refreshSession])
+  }, [api])
 
   const updateSettings = (patch: Partial<ExtensionSettings>) => {
     const next = { ...settings, ...patch }
@@ -88,19 +58,6 @@ function App() {
     updateSettings({ customBlockList: settings.customBlockList.filter((t) => t !== term) })
   }
 
-  const tokenEntries = Object.entries(sessionTokenMap)
-  const replacementEntries = Object.entries(sessionReplacementMap).map(([key, fake]) => {
-    const colon = key.indexOf(':')
-    return { type: key.slice(0, colon) as PIIType, original: key.slice(colon + 1), fake }
-  })
-
-  const typeCounts: Record<string, number> = {}
-  for (const [token] of tokenEntries) {
-    const type = token.replace(/^\[/, '').replace(/_\d+\]$/, '')
-    typeCounts[type] = (typeCounts[type] || 0) + 1
-  }
-  const totalDetected = tokenEntries.length
-
   return (
     <div className="popup-container">
       <header className="popup-header">
@@ -108,9 +65,9 @@ function App() {
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
             <defs>
               <linearGradient id="logoGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#bf616a" />
-                <stop offset="50%" stopColor="#d08770" />
-                <stop offset="100%" stopColor="#ebcb8b" />
+                <stop offset="0%" stopColor="#8FBCBB" />
+                <stop offset="50%" stopColor="#88C0D0" />
+                <stop offset="100%" stopColor="#81A1C1" />
               </linearGradient>
             </defs>
             <rect width="24" height="24" rx="7" fill="url(#logoGrad)" />
@@ -127,115 +84,47 @@ function App() {
         </label>
       </header>
 
-      {/* Status bar */}
-      <div className="status-bar">
-        <div className={`status-dot ${settings.enabled ? 'active' : ''}`} />
-        <span className="status-text">
-          {totalDetected > 0
-            ? `${totalDetected} item${totalDetected !== 1 ? 's' : ''} detected this session`
-            : 'No PII detected yet — start typing on any page'}
-        </span>
-      </div>
-
-      {/* Summary chips */}
-      {totalDetected > 0 && (
-        <div className="stats-grid">
-          {Object.entries(typeCounts).map(([type, count]) => (
-            <div key={type} className="stat-chip">
-              <span className="stat-dot" style={{ background: TYPE_COLORS[type as PIIType] ?? '#81a1c1' }} />
-              <span className="stat-count">{count}</span>
-              <span className="stat-label">{type.toLowerCase()}</span>
-            </div>
-          ))}
+      <section className="section">
+        <h2>Detection Types</h2>
+        <div className="type-grid">
+          {(Object.entries(PII_TYPE_LABELS) as [PIIType, string][])
+            .filter(([t]) => t !== 'CUSTOM')
+            .map(([type, label]) => (
+              <label key={type} className="type-check">
+                <input
+                  type="checkbox"
+                  checked={settings.enabledTypes.includes(type)}
+                  onChange={() => toggleType(type)}
+                />
+                <span>{label}</span>
+              </label>
+            ))}
         </div>
-      )}
+      </section>
 
-      {/* Replacement Map */}
-      {replacementEntries.length > 0 && (
-        <section className="section">
-          <h2>Replacement Map</h2>
-          <p className="section-hint">Each PII value is consistently mapped to the same fake replacement.</p>
-          <div className="mapping-list">
-            {replacementEntries.map(({ type, original, fake }) => (
-              <div key={`${type}:${original}`} className="mapping-row">
-                <span className="mapping-type" style={{ color: TYPE_COLORS[type] ?? '#81a1c1', borderColor: TYPE_COLORS[type] ?? '#81a1c1' }}>{type}</span>
-                <span className="mapping-original">{original}</span>
-                <span className="mapping-arrow">&rarr;</span>
-                <span className="mapping-fake">{fake}</span>
+      <section className="section">
+        <h2>Custom Block List</h2>
+        <div className="custom-input-row">
+          <input
+            type="text"
+            placeholder="Add term to always mask..."
+            value={customTerm}
+            onChange={(e) => setCustomTerm(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addCustomTerm()}
+          />
+          <button onClick={addCustomTerm}>Add</button>
+        </div>
+        {settings.customBlockList.length > 0 && (
+          <div className="custom-list">
+            {settings.customBlockList.map((term) => (
+              <div key={term} className="custom-chip">
+                <span>{term}</span>
+                <button className="chip-remove" onClick={() => removeCustomTerm(term)}>&times;</button>
               </div>
             ))}
           </div>
-        </section>
-      )}
-
-      {/* Token Mappings */}
-      {tokenEntries.length > 0 && (
-        <section className="section">
-          <h2>Token Mappings</h2>
-          <p className="section-hint">Labels used in the redacted text.</p>
-          <div className="mapping-list">
-            {tokenEntries.map(([token, original]) => (
-              <div key={token} className="token-row">
-                <code className="token-key">{token}</code>
-                <span className="token-arrow">&rarr;</span>
-                <span className="token-value">{original}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Collapsible Settings */}
-      <button className="settings-toggle" onClick={() => setSettingsOpen(!settingsOpen)}>
-        <span className="settings-toggle-icon">{settingsOpen ? '▾' : '▸'}</span>
-        <span>Settings</span>
-      </button>
-
-      {settingsOpen && (
-        <>
-          <section className="section">
-            <h2>Detection Types</h2>
-            <div className="type-grid">
-              {(Object.entries(PII_TYPE_LABELS) as [PIIType, string][])
-                .filter(([t]) => t !== 'CUSTOM')
-                .map(([type, label]) => (
-                  <label key={type} className="type-check">
-                    <input
-                      type="checkbox"
-                      checked={settings.enabledTypes.includes(type)}
-                      onChange={() => toggleType(type)}
-                    />
-                    <span>{label}</span>
-                  </label>
-                ))}
-            </div>
-          </section>
-
-          <section className="section">
-            <h2>Custom Block List</h2>
-            <div className="custom-input-row">
-              <input
-                type="text"
-                placeholder="Add term to always mask..."
-                value={customTerm}
-                onChange={(e) => setCustomTerm(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addCustomTerm()}
-              />
-              <button onClick={addCustomTerm}>Add</button>
-            </div>
-            {settings.customBlockList.length > 0 && (
-              <div className="custom-list">
-                {settings.customBlockList.map((term) => (
-                  <div key={term} className="custom-chip">
-                    <span>{term}</span>
-                    <button className="chip-remove" onClick={() => removeCustomTerm(term)}>&times;</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </>
-      )}
+        )}
+      </section>
     </div>
   )
 }

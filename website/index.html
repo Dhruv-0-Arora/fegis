@@ -8,12 +8,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <style type="text/tailwindcss">
         :root {
-            --bg-color: #000000;
-            --text-color: #FFFFFF;
-            --accent-color: #00FF94;--accent-secondary: #0047FF;--surface-color: #111111;
-            --border-color: #333333;
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --bg-color: #2E3440;
+            --text-color: #ECEFF4;
+            --accent-color: #88C0D0;
+            --accent-secondary: #5E81AC;
+            --surface-color: #3B4252;
+            --border-color: #4C566A;
+            --glass-bg: rgba(59, 66, 82, 0.5);
+            --glass-border: rgba(76, 86, 106, 0.6);
         }
         body {
             background-color: var(--bg-color);
@@ -26,10 +28,10 @@
             background: var(--glass-bg);
             backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
         }
         .gradient-text {
-            background: linear-gradient(90deg, #FFFFFF, #AAAAAA);
+            background: linear-gradient(90deg, #ECEFF4, #D8DEE9);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -37,40 +39,40 @@
             color: var(--accent-color);
         }
         .glow-btn {
-            box-shadow: 0 0 15px rgba(0, 255, 148, 0.3);
+            box-shadow: 0 0 15px rgba(136, 192, 208, 0.3);
             transition: all 0.3s ease;
         }
         .glow-btn:hover {
-            box-shadow: 0 0 25px rgba(0, 255, 148, 0.6);
+            box-shadow: 0 0 25px rgba(136, 192, 208, 0.5);
         }
         .feature-card-hover:hover {
             border-color: var(--accent-color);
-            box-shadow: 0 0 20px rgba(0, 255, 148, 0.1);
+            box-shadow: 0 0 20px rgba(136, 192, 208, 0.1);
         }
         .grid-bg {
             background-size: 50px 50px;
             background-image:
-                linear-gradient(to right, rgba(50, 50, 50, 0.05) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(50, 50, 50, 0.05) 1px, transparent 1px);
+                linear-gradient(to right, rgba(76, 86, 106, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(76, 86, 106, 0.08) 1px, transparent 1px);
         }
         .code-typing {
             font-family: 'Monaco', 'Courier New', monospace;
         }
     </style>
 </head>
-<body class="selection:bg-[var(--accent-color)] selection:text-black">
-<nav class="fixed w-full z-50 top-0 border-b border-[var(--border-color)] bg-black/80 backdrop-blur-md">
+<body class="selection:bg-[var(--accent-color)] selection:text-[#2E3440]">
+<nav class="fixed w-full z-50 top-0 border-b border-[var(--border-color)] bg-[#2E3440]/90 backdrop-blur-md">
 <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
 <div class="flex items-center gap-2">
 <span class="material-symbols-outlined text-[var(--accent-color)] text-2xl">shield_lock</span>
-<span class="font-bold tracking-tight text-lg">Fehgis</span>
+<span class="font-bold tracking-tight text-lg text-[#ECEFF4]">Fehgis</span>
 </div>
-<div class="hidden md:flex gap-8 text-sm text-gray-400 font-medium">
-<a class="hover:text-white transition-colors" href="#">How it Works</a>
-<a class="hover:text-white transition-colors" href="#">Manifesto</a>
-<a class="hover:text-white transition-colors" href="#">Security</a>
+<div class="hidden md:flex gap-8 text-sm text-[#D8DEE9] font-medium">
+<a class="hover:text-[#ECEFF4] transition-colors" href="#">How it Works</a>
+<a class="hover:text-[#ECEFF4] transition-colors" href="#">Manifesto</a>
+<a class="hover:text-[#ECEFF4] transition-colors" href="#">Security</a>
 </div>
-<a class="bg-white text-black text-sm font-semibold px-4 py-2 rounded hover:bg-gray-200 transition-colors" href="#">
+<a class="bg-[var(--accent-color)] text-[#2E3440] text-sm font-semibold px-4 py-2 rounded hover:bg-[#8FBCBB] transition-colors" href="#">
                 Install Extension
             </a>
 </div>
@@ -78,22 +80,22 @@
 <header class="relative pt-32 pb-20 overflow-hidden grid-bg">
 <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[var(--accent-secondary)] rounded-full blur-[180px] opacity-10 pointer-events-none"></div>
 <div class="max-w-7xl mx-auto px-6 text-center relative z-10">
-<div class="inline-flex items-center gap-2 border border-[var(--border-color)] rounded-full px-3 py-1 mb-8 bg-white/5 backdrop-blur-sm">
+<div class="inline-flex items-center gap-2 border border-[var(--border-color)] rounded-full px-3 py-1 mb-8 bg-[#3B4252]/50 backdrop-blur-sm">
 <span class="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse"></span>
-<span class="text-xs font-mono text-gray-300 tracking-wide uppercase">v1.0 Now Available</span>
+<span class="text-xs font-mono text-[#D8DEE9] tracking-wide uppercase">v1.0 Now Available</span>
 </div>
-<h1 class="text-6xl md:text-8xl font-bold tracking-tighter mb-6 leading-tight">
+<h1 class="text-6xl md:text-8xl font-bold tracking-tighter mb-6 leading-tight text-[#ECEFF4]">
                 Privacy by <span class="text-[var(--accent-color)]">Default.</span>
 </h1>
-<p class="text-xl text-gray-400 max-w-2xl mx-auto mb-12 font-light leading-relaxed">
+<p class="text-xl text-[#D8DEE9] max-w-2xl mx-auto mb-12 font-light leading-relaxed">
                 The local-first browser extension that intercepts secrets and PII before you hit send. No data ever leaves your device.
             </p>
 <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-20">
-<button class="bg-[var(--accent-color)] text-black px-8 py-4 rounded font-bold text-lg flex items-center gap-3 glow-btn">
+<button class="bg-[var(--accent-color)] text-[#2E3440] px-8 py-4 rounded font-bold text-lg flex items-center gap-3 glow-btn">
 <span>Add to Chrome</span>
 <span class="material-symbols-outlined text-xl">download</span>
 </button>
-<button class="px-8 py-4 rounded border border-[var(--border-color)] text-gray-300 hover:text-white hover:border-white transition-all font-medium flex items-center gap-2">
+<button class="px-8 py-4 rounded border border-[var(--border-color)] text-[#D8DEE9] hover:text-[#ECEFF4] hover:border-[#D8DEE9] transition-all font-medium flex items-center gap-2">
 <span class="material-symbols-outlined text-xl">play_circle</span>
                     Watch Demo
                 </button>
@@ -105,74 +107,75 @@
 </div>
 </div>
 </header>
-<section class="py-24 bg-black relative">
+<section class="py-24 bg-[#2E3440] relative">
 <div class="max-w-7xl mx-auto px-6">
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-<div class="p-8 border border-[#333] rounded-lg feature-card-hover bg-[#050505] transition-all duration-300 group">
-<div class="w-12 h-12 rounded bg-[#111] border border-[#333] flex items-center justify-center mb-6 group-hover:border-[var(--accent-color)] transition-colors">
-<span class="material-symbols-outlined text-white">dns</span>
+<div class="p-8 border border-[#434C5E] rounded-lg feature-card-hover bg-[#3B4252] transition-all duration-300 group">
+<div class="w-12 h-12 rounded bg-[#2E3440] border border-[#434C5E] flex items-center justify-center mb-6 group-hover:border-[var(--accent-color)] transition-colors">
+<span class="material-symbols-outlined text-[#ECEFF4]">dns</span>
 </div>
-<h3 class="text-xl font-bold mb-3 text-white">Local-Only Detection</h3>
-<p class="text-gray-500 leading-relaxed text-sm">
+<h3 class="text-xl font-bold mb-3 text-[#ECEFF4]">Local-Only Detection</h3>
+<p class="text-[#D8DEE9] leading-relaxed text-sm opacity-75">
                         All scanning happens directly within your browser instance. No text ever leaves your machine to be processed.
                     </p>
 </div>
-<div class="p-8 border border-[#333] rounded-lg feature-card-hover bg-[#050505] transition-all duration-300 group">
-<div class="w-12 h-12 rounded bg-[#111] border border-[#333] flex items-center justify-center mb-6 group-hover:border-[var(--accent-color)] transition-colors">
-<span class="material-symbols-outlined text-white">lock</span>
+<div class="p-8 border border-[#434C5E] rounded-lg feature-card-hover bg-[#3B4252] transition-all duration-300 group">
+<div class="w-12 h-12 rounded bg-[#2E3440] border border-[#434C5E] flex items-center justify-center mb-6 group-hover:border-[var(--accent-color)] transition-colors">
+<span class="material-symbols-outlined text-[#ECEFF4]">lock</span>
 </div>
-<h3 class="text-xl font-bold mb-3 text-white">Zero Data Leaks</h3>
-<p class="text-gray-500 leading-relaxed text-sm">
+<h3 class="text-xl font-bold mb-3 text-[#ECEFF4]">Zero Data Leaks</h3>
+<p class="text-[#D8DEE9] leading-relaxed text-sm opacity-75">
                         Prevent accidental pastes of API keys, SSNs, and private tokens into ChatGPT, Reddit, or public forms.
                     </p>
 </div>
-<div class="p-8 border border-[#333] rounded-lg feature-card-hover bg-[#050505] transition-all duration-300 group">
-<div class="w-12 h-12 rounded bg-[#111] border border-[#333] flex items-center justify-center mb-6 group-hover:border-[var(--accent-color)] transition-colors">
-<span class="material-symbols-outlined text-white">bolt</span>
+<div class="p-8 border border-[#434C5E] rounded-lg feature-card-hover bg-[#3B4252] transition-all duration-300 group">
+<div class="w-12 h-12 rounded bg-[#2E3440] border border-[#434C5E] flex items-center justify-center mb-6 group-hover:border-[var(--accent-color)] transition-colors">
+<span class="material-symbols-outlined text-[#ECEFF4]">bolt</span>
 </div>
-<h3 class="text-xl font-bold mb-3 text-white">Instant Redaction</h3>
-<p class="text-gray-500 leading-relaxed text-sm">
+<h3 class="text-xl font-bold mb-3 text-[#ECEFF4]">Instant Redaction</h3>
+<p class="text-[#D8DEE9] leading-relaxed text-sm opacity-75">
                         One-click scrubbing replaces sensitive data with safe placeholders before the network request is sent.
                     </p>
 </div>
 </div>
 </div>
 </section>
-<section class="py-32 border-y border-[#111] bg-[#050505] relative overflow-hidden">
+<section class="py-32 border-y border-[#3B4252] bg-[#3B4252] relative overflow-hidden">
 <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--glass-border)_0%,_transparent_70%)] opacity-20"></div>
 <div class="max-w-4xl mx-auto px-6 relative z-10">
 <div class="text-center mb-16">
-<h2 class="text-3xl md:text-4xl font-bold mb-4">Catch the mistake before it happens.</h2>
-<p class="text-gray-500">Simulating the leak prevention moment.</p>
+<h2 class="text-3xl md:text-4xl font-bold mb-4 text-[#ECEFF4]">Catch the mistake before it happens.</h2>
+<p class="text-[#D8DEE9] opacity-75">Simulating the leak prevention moment.</p>
 </div>
-<div class="bg-[#111] rounded-xl border border-[#333] p-1 overflow-hidden shadow-2xl">
-<div class="bg-[#1a1a1a] px-4 py-3 flex items-center gap-4 border-b border-[#333]">
+<div class="bg-[#2E3440] rounded-xl border border-[#434C5E] p-1 overflow-hidden shadow-2xl">
+<div class="bg-[#3B4252] px-4 py-3 flex items-center gap-4 border-b border-[#434C5E]">
 <div class="flex gap-2">
-<div class="w-3 h-3 rounded-full bg-[#333]"></div>
-<div class="w-3 h-3 rounded-full bg-[#333]"></div>
+<div class="w-3 h-3 rounded-full bg-[#BF616A]"></div>
+<div class="w-3 h-3 rounded-full bg-[#EBCB8B]"></div>
+<div class="w-3 h-3 rounded-full bg-[#A3BE8C]"></div>
 </div>
-<div class="flex-1 bg-[#000] rounded px-3 py-1.5 text-xs text-gray-500 font-mono flex justify-between items-center">
+<div class="flex-1 bg-[#2E3440] rounded px-3 py-1.5 text-xs text-[#D8DEE9] font-mono flex justify-between items-center">
 <span>chatgpt.com</span>
 <span class="material-symbols-outlined text-[10px]">lock</span>
 </div>
 </div>
-<div class="p-8 md:p-12 bg-black min-h-[300px] flex flex-col justify-center items-center">
+<div class="p-8 md:p-12 bg-[#2E3440] min-h-[300px] flex flex-col justify-center items-center">
 <div class="w-full max-w-lg space-y-4">
-<div class="flex items-center justify-between text-xs text-gray-500 uppercase tracking-widest font-mono mb-2">
+<div class="flex items-center justify-between text-xs text-[#D8DEE9] uppercase tracking-widest font-mono mb-2 opacity-75">
 <span>Input Stream</span>
 <span class="text-[var(--accent-color)] animate-pulse">Scanning...</span>
 </div>
 <div class="relative group">
-<div class="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-red-900 rounded-lg blur opacity-40 group-hover:opacity-60 transition duration-1000 group-hover:duration-200"></div>
-<div class="relative p-6 bg-[#0a0a0a] rounded-lg border border-red-900/50">
-<p class="font-mono text-gray-300 text-sm leading-relaxed">
+<div class="absolute -inset-0.5 bg-gradient-to-r from-[#BF616A] to-[#D08770] rounded-lg blur opacity-30 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+<div class="relative p-6 bg-[#3B4252] rounded-lg border border-[#BF616A]/40">
+<p class="font-mono text-[#D8DEE9] text-sm leading-relaxed">
                                     Hey, can you debug this code for me? <br/>
                                     Here are my credentials:<br/>
-<span class="bg-red-500/20 text-red-400 px-1 rounded inline-block mt-2 border border-red-500/30">AWS_ACCESS_KEY_ID = AKIAIOSFODNN7EXAMPLE</span>
+<span class="bg-[#BF616A]/20 text-[#BF616A] px-1 rounded inline-block mt-2 border border-[#BF616A]/30">AWS_ACCESS_KEY_ID = AKIAIOSFODNN7EXAMPLE</span>
 </p>
-<div class="absolute -right-4 top-1/2 -translate-y-1/2 bg-[#1a1a1a] border border-[#333] shadow-xl rounded-lg p-3 flex flex-col gap-2 scale-100 origin-left">
-<div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1 px-1">AWS Key Detected</div>
-<button class="bg-white text-black text-xs font-bold px-3 py-2 rounded hover:bg-gray-200 w-full transition-colors flex items-center justify-center gap-2">
+<div class="absolute -right-4 top-1/2 -translate-y-1/2 bg-[#434C5E] border border-[#4C566A] shadow-xl rounded-lg p-3 flex flex-col gap-2 scale-100 origin-left">
+<div class="text-[10px] text-[#D8DEE9] font-bold uppercase tracking-wider mb-1 px-1">AWS Key Detected</div>
+<button class="bg-[var(--accent-color)] text-[#2E3440] text-xs font-bold px-3 py-2 rounded hover:bg-[#8FBCBB] w-full transition-colors flex items-center justify-center gap-2">
 <span class="material-symbols-outlined text-sm">cleaning_services</span>
                                         Redact
                                     </button>
@@ -180,13 +183,13 @@
 </div>
 </div>
 <div class="flex justify-center py-4">
-<span class="material-symbols-outlined text-gray-600 text-3xl">arrow_downward</span>
+<span class="material-symbols-outlined text-[#4C566A] text-3xl">arrow_downward</span>
 </div>
-<div class="relative p-6 bg-[#0a0a0a] rounded-lg border border-[var(--accent-color)]/30">
+<div class="relative p-6 bg-[#3B4252] rounded-lg border border-[var(--accent-color)]/30">
 <div class="absolute top-2 right-2 text-[var(--accent-color)]">
 <span class="material-symbols-outlined text-lg">check_circle</span>
 </div>
-<p class="font-mono text-gray-300 text-sm leading-relaxed">
+<p class="font-mono text-[#D8DEE9] text-sm leading-relaxed">
                                 Hey, can you debug this code for me? <br/>
                                 Here are my credentials:<br/>
 <span class="text-[var(--accent-color)] mt-2 inline-block">[REDACTED: AWS KEY]</span>
@@ -197,29 +200,29 @@
 </div>
 </div>
 </section>
-<section class="py-32 bg-black">
+<section class="py-32 bg-[#2E3440]">
 <div class="max-w-5xl mx-auto px-6">
 <div class="flex flex-col md:flex-row gap-12 items-start">
 <div class="flex-1">
-<h2 class="text-5xl md:text-7xl font-bold tracking-tighter mb-8 text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-600">
+<h2 class="text-5xl md:text-7xl font-bold tracking-tighter mb-8 text-transparent bg-clip-text bg-gradient-to-br from-[#ECEFF4] to-[#81A1C1]">
                         Your data stays yours. Period.
                     </h2>
 </div>
 <div class="flex-1 space-y-8 pt-4">
-<p class="text-xl text-gray-400 font-light leading-relaxed">
-                        Fehgis is architected with a strict <span class="text-white font-medium">Local-First</span> philosophy. We do not have servers that process your text inputs.
+<p class="text-xl text-[#D8DEE9] font-light leading-relaxed">
+                        Fehgis is architected with a strict <span class="text-[#ECEFF4] font-medium">Local-First</span> philosophy. We do not have servers that process your text inputs.
                     </p>
-<p class="text-xl text-gray-400 font-light leading-relaxed">
+<p class="text-xl text-[#D8DEE9] font-light leading-relaxed">
                         Regex pattern matching and Luhn algorithm checks happen entirely within the Chrome Extension sandbox on your machine.
                     </p>
-<div class="grid grid-cols-2 gap-8 pt-8 border-t border-[#222] mt-8">
+<div class="grid grid-cols-2 gap-8 pt-8 border-t border-[#434C5E] mt-8">
 <div>
-<div class="text-3xl font-bold text-white mb-1">0kb</div>
-<div class="text-sm text-gray-500 uppercase tracking-wider">Data Uploaded</div>
+<div class="text-3xl font-bold text-[#ECEFF4] mb-1">0kb</div>
+<div class="text-sm text-[#D8DEE9] uppercase tracking-wider opacity-75">Data Uploaded</div>
 </div>
 <div>
-<div class="text-3xl font-bold text-white mb-1">100%</div>
-<div class="text-sm text-gray-500 uppercase tracking-wider">Open Source</div>
+<div class="text-3xl font-bold text-[#ECEFF4] mb-1">100%</div>
+<div class="text-sm text-[#D8DEE9] uppercase tracking-wider opacity-75">Open Source</div>
 </div>
 </div>
 </div>
@@ -230,28 +233,28 @@
 <div class="absolute inset-0 bg-[var(--accent-color)] opacity-[0.03]"></div>
 <div class="max-w-3xl mx-auto px-6 text-center relative z-10">
 <span class="material-symbols-outlined text-[var(--accent-color)] text-6xl mb-6">verified_user</span>
-<h2 class="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Ready to secure your inputs?</h2>
-<p class="text-gray-400 mb-10 text-lg">Join thousands of developers and privacy advocates preventing leaks every day.</p>
-<button class="bg-[var(--accent-color)] hover:bg-[#00e685] text-black px-10 py-5 rounded-lg font-bold text-xl flex items-center justify-center gap-3 mx-auto glow-btn transform hover:scale-105 transition-all">
+<h2 class="text-4xl md:text-5xl font-bold mb-6 tracking-tight text-[#ECEFF4]">Ready to secure your inputs?</h2>
+<p class="text-[#D8DEE9] mb-10 text-lg">Join thousands of developers and privacy advocates preventing leaks every day.</p>
+<button class="bg-[var(--accent-color)] hover:bg-[#8FBCBB] text-[#2E3440] px-10 py-5 rounded-lg font-bold text-xl flex items-center justify-center gap-3 mx-auto glow-btn transform hover:scale-105 transition-all">
 <span>Add to Chrome</span>
-<span class="text-sm bg-black/10 px-2 py-0.5 rounded text-black/70 font-mono">Free</span>
+<span class="text-sm bg-[#2E3440]/20 px-2 py-0.5 rounded text-[#2E3440]/80 font-mono">Free</span>
 </button>
-<p class="mt-6 text-sm text-gray-600">Requires Chrome 88+ • No account needed</p>
+<p class="mt-6 text-sm text-[#4C566A]">Requires Chrome 88+ • No account needed</p>
 </div>
 </section>
-<footer class="border-t border-[#111] bg-black py-12">
+<footer class="border-t border-[#3B4252] bg-[#2E3440] py-12">
 <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
 <div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-gray-600">shield_lock</span>
-<span class="font-bold text-gray-500">Fehgis</span>
+<span class="material-symbols-outlined text-[#4C566A]">shield_lock</span>
+<span class="font-bold text-[#4C566A]">Fehgis</span>
 </div>
-<div class="text-sm text-gray-600">
-                © 2024 Fehgis. Open Source under MIT.
+<div class="text-sm text-[#4C566A]">
+                &copy; 2024 Fehgis. Open Source under MIT.
             </div>
 <div class="flex gap-6">
-<a class="text-gray-600 hover:text-white transition-colors" href="#">GitHub</a>
-<a class="text-gray-600 hover:text-white transition-colors" href="#">Twitter</a>
-<a class="text-gray-600 hover:text-white transition-colors" href="#">Privacy Policy</a>
+<a class="text-[#4C566A] hover:text-[#ECEFF4] transition-colors" href="#">GitHub</a>
+<a class="text-[#4C566A] hover:text-[#ECEFF4] transition-colors" href="#">Twitter</a>
+<a class="text-[#4C566A] hover:text-[#ECEFF4] transition-colors" href="#">Privacy Policy</a>
 </div>
 </div>
 </footer>

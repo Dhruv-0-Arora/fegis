@@ -56,7 +56,7 @@ export function analyzeText(
   }
 
   if (enabledTypes) {
-    allMatches = allMatches.filter((m) => enabledTypes.includes(m.type))
+    allMatches = allMatches.filter((m) => m.type === 'CUSTOM' || enabledTypes.includes(m.type))
   }
 
   return resolveOverlaps(allMatches)
