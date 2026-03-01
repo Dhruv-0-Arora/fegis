@@ -380,7 +380,7 @@ export default function HeroDemo() {
                   className={`px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all ${redactMode === 'labels' ? 'text-[#88C0D0]' : 'text-[#4C566A] hover:text-[#D8DEE9]'}`}
                   style={{ background: redactMode === 'labels' ? 'rgba(136,192,208,0.15)' : 'transparent' }}
                   onClick={() => setRedactMode('labels')}
-                >Labels</button>
+                >Redacted</button>
                 <button
                   className={`px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all ${redactMode === 'replaced' ? 'text-[#88C0D0]' : 'text-[#4C566A] hover:text-[#D8DEE9]'}`}
                   style={{ background: redactMode === 'replaced' ? 'rgba(136,192,208,0.15)' : 'transparent' }}
