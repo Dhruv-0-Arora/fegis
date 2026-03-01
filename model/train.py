@@ -16,10 +16,9 @@ from pathlib import Path
 import numpy as np
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-# Force CPU-only -- Metal GPU dispatch overhead exceeds gains for this model size
+# Use tf.keras (Keras 2) so the saved .h5 is directly compatible with tensorflowjs_converter
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import tensorflow as tf  # noqa: E402
-from tensorflow.keras import mixed_precision
-mixed_precision.set_global_policy("mixed_float16")
 
 DATA_DIR = Path(__file__).parent / "data"
 MODEL_PATH = Path("/mnt/external/docs/fhegis/pii_ner.h5")
@@ -97,7 +96,7 @@ def build_model(vocab_size: int, num_labels: int) -> tf.keras.Model:
     )(x)
     x = tf.keras.layers.Dropout(0.35)(x)
     outputs = tf.keras.layers.TimeDistributed(
-        tf.keras.layers.Dense(num_labels, activation="softmax", dtype="float32")
+        tf.keras.layers.Dense(num_labels, activation="softmax")
     )(x)
 
     model = tf.keras.Model(inputs, outputs, name="pii_ner")
