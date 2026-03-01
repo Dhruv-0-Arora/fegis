@@ -1,7 +1,7 @@
 /* Nord-themed content-script UI */
 
 .pii-shield-highlight-layer {
-  position: absolute;
+  position: fixed;
   pointer-events: none;
   z-index: 2147483640;
   background: transparent;
@@ -93,7 +93,7 @@
 /* -- PII Count Badge (Nord Frost) -- */
 
 .pii-shield-badge {
-  position: absolute !important;
+  position: fixed !important;
   z-index: 2147483646 !important;
   pointer-events: auto !important;
   display: flex !important;
@@ -264,7 +264,7 @@
 /* -- Block Warning (Nord Red) -- */
 
 .pii-shield-warning {
-  position: absolute;
+  position: fixed;
   z-index: 2147483647;
   background: #BF616A;
   color: #ECEFF4;

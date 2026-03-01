@@ -171,11 +171,10 @@ function getClipBounds(el: HTMLElement): { top: number; right: number; bottom: n
 
 function positionHighlightLayer(inputEl: HTMLElement, highlightDiv: HTMLDivElement) {
   const rect = getInputRect(inputEl)
-  const scrollX = window.scrollX
-  const scrollY = window.scrollY
 
-  const top = rect.top + scrollY
-  const left = rect.left + scrollX
+  // Use fixed positioning to avoid extending the document's scrollable area
+  const top = rect.top
+  const left = rect.left
   if (
     !lastInputRect ||
     lastInputRect.top !== top ||
@@ -184,7 +183,7 @@ function positionHighlightLayer(inputEl: HTMLElement, highlightDiv: HTMLDivEleme
     lastInputRect.height !== rect.height
   ) {
     lastInputRect = { top, left, width: rect.width, height: rect.height }
-    highlightDiv.style.position = 'absolute'
+    highlightDiv.style.position = 'fixed'
     highlightDiv.style.top = `${top}px`
     highlightDiv.style.left = `${left}px`
     highlightDiv.style.width = `${rect.width}px`
@@ -206,11 +205,23 @@ function positionHighlightLayer(inputEl: HTMLElement, highlightDiv: HTMLDivEleme
   }
 }
 
+function positionBadge() {
+  if (!state) return
+  const { badgeDiv, inputEl } = state
+  if (badgeDiv.style.display === 'none') return
+  const rect = getInputRect(inputEl)
+  // Anchor badge inside the input's top-right corner so it stays visible
+  // even when the input is scrolled or resized
+  badgeDiv.style.top = `${rect.top + 4}px`
+  badgeDiv.style.left = `${rect.right - 8}px`
+}
+
 function startPositionLoop() {
   if (!state) return
   function loop() {
     if (!state) return
     positionHighlightLayer(state.inputEl, state.highlightDiv)
+    positionBadge()
     syncScroll()
     state.rafId = requestAnimationFrame(loop)
   }
@@ -380,13 +391,11 @@ function updateBadge(count: number, autoReplace: boolean = false) {
   }
 
   const rect = getInputRect(inputEl)
-  const scrollX = window.scrollX
-  const scrollY = window.scrollY
 
   badgeDiv.style.display = 'flex'
-  badgeDiv.style.position = 'absolute'
-  badgeDiv.style.top = `${rect.top + scrollY - 30}px`
-  badgeDiv.style.left = `${rect.right + scrollX}px`
+  badgeDiv.style.position = 'fixed'
+  badgeDiv.style.top = `${rect.top + 4}px`
+  badgeDiv.style.left = `${rect.right - 8}px`
   badgeDiv.style.zIndex = '2147483646'
   badgeDiv.title = `${count} PII item${count > 1 ? 's' : ''} detected`
 
@@ -695,12 +704,11 @@ export function showBlockWarning() {
   if (state.warningTimer) clearTimeout(state.warningTimer)
 
   const rect = getInputRect(inputEl)
-  const scrollX = window.scrollX
-  const scrollY = window.scrollY
 
   warningDiv.style.display = 'block'
-  warningDiv.style.top = `${rect.bottom + scrollY + 6}px`
-  warningDiv.style.left = `${rect.left + scrollX}px`
+  warningDiv.style.position = 'fixed'
+  warningDiv.style.top = `${rect.bottom + 6}px`
+  warningDiv.style.left = `${rect.left}px`
 
   warningDiv.style.animation = 'none'
   void warningDiv.offsetWidth

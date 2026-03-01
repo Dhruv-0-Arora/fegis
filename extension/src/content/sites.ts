@@ -113,16 +113,23 @@ const geminiAdapter: SiteAdapter = {
 
 const grokAdapter: SiteAdapter = {
   name: 'Grok',
-  isContentEditable: false,
+  isContentEditable: true,
   getInputElement: () => querySelector([
+    'div.tiptap.ProseMirror[contenteditable="true"]',
+    'div.ProseMirror[contenteditable="true"]',
+    '.query-bar div[contenteditable="true"]',
+    'div[contenteditable="true"][tabindex="0"]',
     'textarea',
+    'div[contenteditable="true"]',
   ]) || getVisibleInput(),
   getSendButton: () => querySelector([
-    'button[aria-label="Send"]',
+    'button[aria-label="Submit"]',
     'button[type="submit"]',
+    'button[aria-label="Send"]',
+    'button[aria-label="Send message"]',
   ]),
   getResponseContainer: () => {
-    const msgs = document.querySelectorAll<HTMLElement>('.message-bubble')
+    const msgs = document.querySelectorAll<HTMLElement>('.message-bubble, [data-testid*="message"], [class*="response"]')
     return msgs.length > 0 ? msgs[msgs.length - 1] : null
   },
   getInputText: getTextFromElement,
