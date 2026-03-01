@@ -1,0 +1,7 @@
+# Python 3.9 + Apple Silicon (M-series) compatible
+jax<0.4.24
+jaxlib<0.4.24
+tensorflow>=2.15,<2.16
+tensorflowjs>=4.17,<4.22
+numpy>=1.24,<2.0
+faker>=22.0

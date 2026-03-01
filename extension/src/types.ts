@@ -63,6 +63,7 @@ export interface ExtensionSettings {
 
 export type MessageAction =
   | { action: 'ANALYZE_TEXT'; text: string }
+  | { action: 'ML_ANALYZE'; text: string }
   | { action: 'GET_SETTINGS' }
   | { action: 'UPDATE_SETTINGS'; settings: Partial<ExtensionSettings> }
   | { action: 'GET_TOKEN_MAP' }

@@ -32,6 +32,11 @@ export default defineConfig(({ mode }) => {
           formats: ['iife'],
           fileName: () => 'background.js',
         },
+        rollupOptions: {
+          output: {
+            inlineDynamicImports: true,
+          },
+        },
       },
       define: {
         'process.env.NODE_ENV': JSON.stringify('production'),

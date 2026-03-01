@@ -1,5 +1,5 @@
 import { detectSite } from './sites.ts'
-import { analyzeText } from '../detectors/engine.ts'
+import { analyzeText, analyzeTextWithML } from '../detectors/engine.ts'
 import { createHighlightLayer, renderHighlights, cleanup, showTooltip, scheduleHide, setReplaceCallback, updateInspectPanelData, hideInspectPanel, resetActiveMode } from './highlighter.ts'
 import { setCurrentMatches, setupInterceptor, setupResponseUnmasking } from './interceptor.ts'
 import { watchForInput, stopWatching } from './observer.ts'
@@ -56,7 +56,7 @@ function getInputText(el: HTMLElement): string {
   return el.innerText || el.textContent || ''
 }
 
-function processInput(el: HTMLElement) {
+async function processInput(el: HTMLElement) {
   if (!enabled || dead) return
 
   let text = getInputText(el)
@@ -93,18 +93,33 @@ function processInput(el: HTMLElement) {
     return
   }
 
+  // Show regex results immediately for responsiveness
   const rawMatches = analyzeText(text, enabledTypes, customBlockList)
   const knownFakes = getKnownFakeValues()
-  const matches = rawMatches.filter(m => !knownFakes.has(m.text))
-  currentMatches = matches
-  renderHighlights(text, matches)
-  setCurrentMatches(matches)
-  updateInspectPanelData(text, matches, getTokenMap(), getReplacementMap())
+  const regexMatches = rawMatches.filter(m => !knownFakes.has(m.text))
+  currentMatches = regexMatches
+  renderHighlights(text, regexMatches)
+  setCurrentMatches(regexMatches)
+  updateInspectPanelData(text, regexMatches, getTokenMap(), getReplacementMap())
+
+  // Then augment with ML results asynchronously
+  try {
+    const mlMatches = await analyzeTextWithML(text, enabledTypes, customBlockList)
+    if (lastProcessedText === text && !dead) {
+      const filteredMl = mlMatches.filter(m => !knownFakes.has(m.text))
+      currentMatches = filteredMl
+      renderHighlights(text, filteredMl)
+      setCurrentMatches(filteredMl)
+      updateInspectPanelData(text, filteredMl, getTokenMap(), getReplacementMap())
+    }
+  } catch {
+    // ML unavailable; regex results already displayed
+  }
 
   safeSendMessage({
     action: 'UPDATE_STATS',
-    matchCount: matches.length,
-    types: matches.map((m: PIIMatch) => m.type),
+    matchCount: currentMatches.length,
+    types: currentMatches.map((m: PIIMatch) => m.type),
   })
 }
 

@@ -62,7 +62,7 @@ export function analyzeText(
   return resolveOverlaps(allMatches)
 }
 
-function resolveOverlaps(matches: PIIMatch[]): PIIMatch[] {
+export function resolveOverlaps(matches: PIIMatch[]): PIIMatch[] {
   matches.sort((a, b) => {
     if (a.start !== b.start) return a.start - b.start
     if (a.score !== b.score) return b.score - a.score
@@ -87,4 +87,57 @@ function resolveOverlaps(matches: PIIMatch[]): PIIMatch[] {
   }
 
   return filtered
+}
+
+/**
+ * Request ML-based PII analysis from the background service worker.
+ * Returns additional matches found by the ML model (score 70).
+ * Falls back to empty array if the background is unreachable.
+ */
+function requestMLAnalysis(text: string): Promise<PIIMatch[]> {
+  return new Promise((resolve) => {
+    try {
+      if (typeof chrome === 'undefined' || !chrome.runtime?.id) {
+        resolve([])
+        return
+      }
+      chrome.runtime.sendMessage({ action: 'ML_ANALYZE', text }, (response) => {
+        if (chrome.runtime.lastError || !response?.matches) {
+          resolve([])
+        } else {
+          resolve(response.matches as PIIMatch[])
+        }
+      })
+    } catch {
+      resolve([])
+    }
+  })
+}
+
+/**
+ * Async version of analyzeText that also incorporates ML model results.
+ * Regex runs synchronously first, then ML results are merged in.
+ */
+export async function analyzeTextWithML(
+  text: string,
+  enabledTypes: PIIType[] | null = null,
+  customBlockList: string[] = [],
+): Promise<PIIMatch[]> {
+  const regexMatches = analyzeText(text, enabledTypes, customBlockList)
+
+  let mlMatches: PIIMatch[]
+  try {
+    mlMatches = await requestMLAnalysis(text)
+  } catch {
+    return regexMatches
+  }
+
+  if (mlMatches.length === 0) return regexMatches
+
+  if (enabledTypes) {
+    mlMatches = mlMatches.filter((m) => enabledTypes.includes(m.type))
+  }
+
+  const combined = [...regexMatches, ...mlMatches]
+  return resolveOverlaps(combined)
 }

@@ -1,4 +1,5 @@
 import type { ExtensionSettings, TokenMap } from '../types.ts'
+import { mlAnalyzeText } from '../ml/detector.ts'
 
 const DEFAULT_SETTINGS: ExtensionSettings = {
   enabled: true,
@@ -89,6 +90,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           }
         }
         return { ok: true }
+      }
+      case 'ML_ANALYZE': {
+        try {
+          const mlMatches = await mlAnalyzeText(message.text || '')
+          return { matches: mlMatches }
+        } catch (err) {
+          console.warn('[PII Shield] ML analysis failed:', err)
+          return { matches: [] }
+        }
       }
       case 'GET_STATS': {
         return { stats: sessionStats }
