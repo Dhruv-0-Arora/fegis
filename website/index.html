@@ -120,7 +120,7 @@
 
 <!-- Hero — transparent, demo embedded below CTA -->
 <header class="relative pt-36 pb-20 overflow-hidden" style="position:relative;z-index:10;">
-<div class="max-w-7xl mx-auto px-6 text-center">
+<div class="max-w-8xl mx-auto px-6 text-center">
     <div class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-8 glass-pill">
         <span class="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse"></span>
         <span class="text-xs font-mono text-[#D8DEE9] font-medium tracking-wide uppercase">v1.0 Now Available</span>
@@ -195,62 +195,301 @@
 
 <!-- How it Works -->
 <section id="how-it-works" class="glass-section py-20 md:py-32 relative overflow-hidden scroll-mt-20" style="position:relative;z-index:10;">
-<div class="max-w-4xl mx-auto px-6 relative z-10">
-<div class="text-center mb-16">
-<h2 class="text-3xl md:text-4xl font-bold mb-4 text-[#ECEFF4]">Catch the mistake before it happens.</h2>
-<p class="text-[#D8DEE9] opacity-75">Simulating the leak prevention moment.</p>
-</div>
-<div class="rounded-xl border border-white/10 p-1 overflow-hidden shadow-2xl" style="background:rgba(46,52,64,0.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);">
-<div class="px-4 py-3 flex items-center gap-4 border-b border-white/10" style="background:rgba(59,66,82,0.8);">
-<div class="flex gap-2">
-<div class="w-3 h-3 rounded-full bg-[#BF616A]"></div>
-<div class="w-3 h-3 rounded-full bg-[#EBCB8B]"></div>
-<div class="w-3 h-3 rounded-full bg-[#A3BE8C]"></div>
-</div>
-<div class="flex-1 bg-[#2E3440]/80 rounded px-3 py-1.5 text-xs text-[#D8DEE9] font-mono flex justify-between items-center">
-<span>chatgpt.com</span>
-<span class="material-symbols-outlined text-[10px]">lock</span>
-</div>
-</div>
-<div class="p-8 md:p-12 min-h-[300px] flex flex-col justify-center items-center" style="background:rgba(46,52,64,0.6);">
-<div class="w-full max-w-lg space-y-4">
-<div class="flex items-center justify-between text-xs text-[#D8DEE9] uppercase tracking-widest font-mono mb-2 opacity-75">
-<span>Input Stream</span>
-<span class="text-[var(--accent-color)] animate-pulse">Scanning...</span>
-</div>
-<div class="relative group">
-<div class="absolute -inset-0.5 bg-gradient-to-r from-[#BF616A] to-[#D08770] rounded-lg blur opacity-30 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-<div class="relative p-6 rounded-lg border border-[#BF616A]/40" style="background:rgba(59,66,82,0.85);">
-<p class="font-mono text-[#D8DEE9] text-sm leading-relaxed">
-    Hey, can you debug this code for me? <br/>
-    Here are my credentials:<br/>
-<span class="bg-[#BF616A]/20 text-[#BF616A] px-1 rounded inline-block mt-2 border border-[#BF616A]/30">AWS_ACCESS_KEY_ID = AKIAIOSFODNN7EXAMPLE</span>
-</p>
-<div class="absolute -right-4 top-1/2 -translate-y-1/2 border border-white/10 shadow-xl rounded-lg p-3 flex flex-col gap-2 scale-100 origin-left" style="background:rgba(67,76,94,0.95);backdrop-filter:blur(12px);">
-<div class="text-[10px] text-[#D8DEE9] font-bold uppercase tracking-wider mb-1 px-1">AWS Key Detected</div>
-<button class="bg-[#a3be8c] text-[#2E3440] text-xs font-bold px-3 py-2 rounded hover:bg-[#a3be8c] w-full transition-colors flex items-center justify-center gap-2">
-<span class="material-symbols-outlined text-sm">cleaning_services</span>
-    Redact
-</button>
-</div>
-</div>
-</div>
-<div class="flex justify-center py-4">
-<span class="material-symbols-outlined text-[#4C566A] text-3xl">arrow_downward</span>
-</div>
-<div class="relative p-6 rounded-lg border border-[var(--accent-color)]/30" style="background:rgba(59,66,82,0.85);">
-<div class="absolute top-2 right-2 text-[var(--accent-color)]">
-<span class="material-symbols-outlined text-lg">check_circle</span>
-</div>
-<p class="font-mono text-[#D8DEE9] text-sm leading-relaxed">
-    Hey, can you debug this code for me? <br/>
-    Here are my credentials:<br/>
-<span class="text-[var(--accent-color)] mt-2 inline-block">[REDACTED: AWS KEY]</span>
-</p>
-</div>
-</div>
-</div>
-</div>
+<style>
+  @keyframes flow-dash {
+    from { stroke-dashoffset: 20; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes flow-dash-down {
+    from { stroke-dashoffset: 16; }
+    to   { stroke-dashoffset: 0; }
+  }
+  .flow-line-h { animation: flow-dash 1s linear infinite; }
+  .flow-line-v { animation: flow-dash-down 1s linear infinite; }
+  .hiw-node {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .hiw-node:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.35);
+  }
+</style>
+<div class="max-w-6xl mx-auto px-6 relative z-10">
+
+  <!-- Header -->
+  <div class="text-center mb-14">
+    <div class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-5 glass-pill">
+      <span class="w-2 h-2 rounded-full bg-[#88C0D0] animate-pulse"></span>
+      <span class="text-xs font-mono text-[#D8DEE9] font-medium tracking-wide uppercase">End-to-End Flow</span>
+    </div>
+    <h2 class="text-3xl md:text-4xl font-bold mb-3 text-[#ECEFF4]">How It Works</h2>
+    <p class="text-[#D8DEE9] opacity-70 max-w-lg mx-auto text-sm leading-relaxed">
+      Your data is intercepted, redacted, and restored — all locally, before a single byte reaches the AI.
+    </p>
+  </div>
+
+  <!-- ─── DESKTOP FLOW (md+) ─── -->
+  <div class="hidden md:flex items-center justify-center gap-0 w-full">
+
+    <!-- Node 1: You -->
+    <div class="hiw-node flex flex-col items-center text-center gap-3 px-5 py-6 rounded-2xl w-[152px] flex-shrink-0 border border-white/10" style="background:rgba(59,66,82,0.45);backdrop-filter:blur(16px);">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style="background:rgba(94,129,172,0.18);border:1px solid rgba(94,129,172,0.3);">
+        <span class="material-symbols-outlined text-[#81A1C1]" style="font-size:28px;">person</span>
+      </div>
+      <div>
+        <div class="font-bold text-[#ECEFF4] text-sm mb-1">You</div>
+        <div class="text-[#D8DEE9] text-xs opacity-65 leading-snug">Type or paste<br/>text &amp; files</div>
+      </div>
+      <div class="flex gap-1 flex-wrap justify-center">
+        <span class="text-[10px] px-2 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">Text</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">PDF</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">DOCX</span>
+      </div>
+    </div>
+
+    <!-- Arrow 1 -->
+    <div class="flex items-center flex-shrink-0 mx-1">
+      <svg width="52" height="20" viewBox="0 0 52 20">
+        <line x1="2" y1="10" x2="40" y2="10" stroke="#4C566A" stroke-width="1.5" stroke-dasharray="5 4" class="flow-line-h"/>
+        <path d="M36 4 L48 10 L36 16" fill="none" stroke="#88C0D0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- Node 2: Fegis (Detect & Redact) -->
+    <div class="hiw-node flex flex-col items-center text-center gap-3 px-5 py-6 rounded-2xl w-[152px] flex-shrink-0 border" style="background:rgba(136,192,208,0.07);border-color:rgba(136,192,208,0.28);box-shadow:0 0 24px rgba(136,192,208,0.09);backdrop-filter:blur(16px);">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 relative" style="background:rgba(136,192,208,0.14);border:1px solid rgba(136,192,208,0.3);">
+        <svg xmlns="http://www.w3.org/2000/svg" height="28px" viewBox="0 -960 960 960" width="28px" fill="#88C0D0">
+          <path d="M480-80q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Zm0-84q104-33 172-132t68-220v-189l-240-90-240 90v189q0 121 68 220t172 132Zm0-316Zm-80 160h160q17 0 28.5-11.5T600-360v-120q0-17-11.5-28.5T560-520v-40q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560v40q-17 0-28.5 11.5T360-480v120q0 17 11.5 28.5T400-320Zm40-200v-40q0-17 11.5-28.5T480-600q17 0 28.5 11.5T520-560v40h-80Z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="font-bold text-[#88C0D0] text-sm mb-1">Fegis</div>
+        <div class="text-[#D8DEE9] text-xs opacity-65 leading-snug">Detects &amp; redacts<br/>PII before send</div>
+      </div>
+      <div class="flex gap-1 flex-wrap justify-center">
+        <span class="text-[10px] px-2 py-0.5 rounded-full text-[#BF616A]" style="background:rgba(191,97,106,0.15);border:1px solid rgba(191,97,106,0.25);">SSN</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full text-[#EBCB8B]" style="background:rgba(235,203,139,0.12);border:1px solid rgba(235,203,139,0.25);">Keys</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full text-[#B48EAD]" style="background:rgba(180,142,173,0.12);border:1px solid rgba(180,142,173,0.25);">PII</span>
+      </div>
+    </div>
+
+    <!-- Arrow 2 -->
+    <div class="flex items-center flex-shrink-0 mx-1">
+      <svg width="52" height="20" viewBox="0 0 52 20">
+        <line x1="2" y1="10" x2="40" y2="10" stroke="#4C566A" stroke-width="1.5" stroke-dasharray="5 4" class="flow-line-h"/>
+        <path d="M36 4 L48 10 L36 16" fill="none" stroke="#88C0D0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- Node 3: AI Services -->
+    <div class="hiw-node flex flex-col items-center text-center gap-3 px-5 py-6 rounded-2xl w-[168px] flex-shrink-0 border border-white/10" style="background:rgba(59,66,82,0.45);backdrop-filter:blur(16px);">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style="background:rgba(163,190,140,0.14);border:1px solid rgba(163,190,140,0.25);">
+        <span class="material-symbols-outlined text-[#A3BE8C]" style="font-size:28px;">smart_toy</span>
+      </div>
+      <div>
+        <div class="font-bold text-[#ECEFF4] text-sm mb-1">AI Services</div>
+        <div class="text-[#D8DEE9] text-xs opacity-65 leading-snug">Receives only<br/>safe, redacted text</div>
+      </div>
+      <div class="flex gap-1 flex-wrap justify-center">
+        <span class="text-[10px] px-1.5 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">ChatGPT</span>
+        <span class="text-[10px] px-1.5 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">Grok</span>
+        <span class="text-[10px] px-1.5 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">Gemini</span>
+        <span class="text-[10px] px-1.5 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">Perplexity</span>
+      </div>
+    </div>
+
+    <!-- Arrow 3 -->
+    <div class="flex items-center flex-shrink-0 mx-1">
+      <svg width="52" height="20" viewBox="0 0 52 20">
+        <line x1="2" y1="10" x2="40" y2="10" stroke="#4C566A" stroke-width="1.5" stroke-dasharray="5 4" class="flow-line-h"/>
+        <path d="M36 4 L48 10 L36 16" fill="none" stroke="#88C0D0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- Node 4: Fegis (Auto-Replace) -->
+    <div class="hiw-node flex flex-col items-center text-center gap-3 px-5 py-6 rounded-2xl w-[152px] flex-shrink-0 border" style="background:rgba(136,192,208,0.07);border-color:rgba(136,192,208,0.28);box-shadow:0 0 24px rgba(136,192,208,0.09);backdrop-filter:blur(16px);">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style="background:rgba(136,192,208,0.14);border:1px solid rgba(136,192,208,0.3);">
+        <svg xmlns="http://www.w3.org/2000/svg" height="28px" viewBox="0 -960 960 960" width="28px" fill="#88C0D0">
+          <path d="M480-80q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Zm0-84q104-33 172-132t68-220v-189l-240-90-240 90v189q0 121 68 220t172 132Zm0-316Zm-80 160h160q17 0 28.5-11.5T600-360v-120q0-17-11.5-28.5T560-520v-40q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560v40q-17 0-28.5 11.5T360-480v120q0 17 11.5 28.5T400-320Zm40-200v-40q0-17 11.5-28.5T480-600q17 0 28.5 11.5T520-560v40h-80Z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="font-bold text-[#88C0D0] text-sm mb-1">Fegis</div>
+        <div class="text-[#D8DEE9] text-xs opacity-65 leading-snug">Auto-replaces tokens<br/>with real values</div>
+      </div>
+      <div class="flex gap-1 flex-wrap justify-center">
+        <span class="text-[10px] px-2 py-0.5 rounded-full text-[#A3BE8C]" style="background:rgba(163,190,140,0.12);border:1px solid rgba(163,190,140,0.25);">Restore</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full text-[#A3BE8C]" style="background:rgba(163,190,140,0.12);border:1px solid rgba(163,190,140,0.25);">Local</span>
+      </div>
+    </div>
+
+    <!-- Arrow 4 -->
+    <div class="flex items-center flex-shrink-0 mx-1">
+      <svg width="52" height="20" viewBox="0 0 52 20">
+        <line x1="2" y1="10" x2="40" y2="10" stroke="#4C566A" stroke-width="1.5" stroke-dasharray="5 4" class="flow-line-h"/>
+        <path d="M36 4 L48 10 L36 16" fill="none" stroke="#88C0D0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- Node 5: You (receive) -->
+    <div class="hiw-node flex flex-col items-center text-center gap-3 px-5 py-6 rounded-2xl w-[152px] flex-shrink-0 border border-white/10" style="background:rgba(59,66,82,0.45);backdrop-filter:blur(16px);">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style="background:rgba(163,190,140,0.14);border:1px solid rgba(163,190,140,0.25);">
+        <span class="material-symbols-outlined text-[#A3BE8C]" style="font-size:28px;">verified_user</span>
+      </div>
+      <div>
+        <div class="font-bold text-[#ECEFF4] text-sm mb-1">You</div>
+        <div class="text-[#D8DEE9] text-xs opacity-65 leading-snug">Reads AI response<br/>with real data shown</div>
+      </div>
+      <div class="flex gap-1 flex-wrap justify-center">
+        <span class="text-[10px] px-2 py-0.5 rounded-full text-[#A3BE8C]" style="background:rgba(163,190,140,0.12);border:1px solid rgba(163,190,140,0.25);">Private</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full text-[#A3BE8C]" style="background:rgba(163,190,140,0.12);border:1px solid rgba(163,190,140,0.25);">Safe</span>
+      </div>
+    </div>
+
+  </div><!-- end desktop flow -->
+
+  <!-- ─── MOBILE FLOW (< md) ─── -->
+  <div class="flex md:hidden flex-col items-center gap-0">
+
+    <!-- Node 1 mobile -->
+    <div class="hiw-node flex items-center gap-4 px-5 py-4 rounded-2xl w-full border border-white/10" style="background:rgba(59,66,82,0.45);backdrop-filter:blur(16px);">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(94,129,172,0.18);border:1px solid rgba(94,129,172,0.3);">
+        <span class="material-symbols-outlined text-[#81A1C1]" style="font-size:24px;">person</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-[#ECEFF4] text-sm">You</div>
+        <div class="text-[#D8DEE9] text-xs opacity-65">Type or paste text &amp; files</div>
+        <div class="flex gap-1 mt-1.5 flex-wrap">
+          <span class="text-[10px] px-2 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">Text</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">PDF</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">DOCX</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow down -->
+    <div class="flex justify-center py-1">
+      <svg width="20" height="36" viewBox="0 0 20 36">
+        <line x1="10" y1="2" x2="10" y2="26" stroke="#4C566A" stroke-width="1.5" stroke-dasharray="4 3" class="flow-line-v"/>
+        <path d="M4 22 L10 34 L16 22" fill="none" stroke="#88C0D0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- Node 2 mobile -->
+    <div class="hiw-node flex items-center gap-4 px-5 py-4 rounded-2xl w-full border" style="background:rgba(136,192,208,0.07);border-color:rgba(136,192,208,0.28);backdrop-filter:blur(16px);">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(136,192,208,0.14);border:1px solid rgba(136,192,208,0.3);">
+        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#88C0D0">
+          <path d="M480-80q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Zm0-84q104-33 172-132t68-220v-189l-240-90-240 90v189q0 121 68 220t172 132Zm0-316Zm-80 160h160q17 0 28.5-11.5T600-360v-120q0-17-11.5-28.5T560-520v-40q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560v40q-17 0-28.5 11.5T360-480v120q0 17 11.5 28.5T400-320Zm40-200v-40q0-17 11.5-28.5T480-600q17 0 28.5 11.5T520-560v40h-80Z"/>
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-[#88C0D0] text-sm">Fegis — Detect &amp; Redact</div>
+        <div class="text-[#D8DEE9] text-xs opacity-65">Intercepts PII before send</div>
+        <div class="flex gap-1 mt-1.5 flex-wrap">
+          <span class="text-[10px] px-2 py-0.5 rounded-full text-[#BF616A]" style="background:rgba(191,97,106,0.15);border:1px solid rgba(191,97,106,0.25);">SSN</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full text-[#EBCB8B]" style="background:rgba(235,203,139,0.12);border:1px solid rgba(235,203,139,0.25);">Keys</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full text-[#B48EAD]" style="background:rgba(180,142,173,0.12);border:1px solid rgba(180,142,173,0.25);">PII</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-center py-1">
+      <svg width="20" height="36" viewBox="0 0 20 36">
+        <line x1="10" y1="2" x2="10" y2="26" stroke="#4C566A" stroke-width="1.5" stroke-dasharray="4 3" class="flow-line-v"/>
+        <path d="M4 22 L10 34 L16 22" fill="none" stroke="#88C0D0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- Node 3 mobile -->
+    <div class="hiw-node flex items-center gap-4 px-5 py-4 rounded-2xl w-full border border-white/10" style="background:rgba(59,66,82,0.45);backdrop-filter:blur(16px);">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(163,190,140,0.14);border:1px solid rgba(163,190,140,0.25);">
+        <span class="material-symbols-outlined text-[#A3BE8C]" style="font-size:24px;">smart_toy</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-[#ECEFF4] text-sm">AI Services</div>
+        <div class="text-[#D8DEE9] text-xs opacity-65">Receives only safe, redacted text</div>
+        <div class="flex gap-1 mt-1.5 flex-wrap">
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">ChatGPT</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">Grok</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">Gemini</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full glass-pill text-[#D8DEE9]/80">Perplexity</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-center py-1">
+      <svg width="20" height="36" viewBox="0 0 20 36">
+        <line x1="10" y1="2" x2="10" y2="26" stroke="#4C566A" stroke-width="1.5" stroke-dasharray="4 3" class="flow-line-v"/>
+        <path d="M4 22 L10 34 L16 22" fill="none" stroke="#88C0D0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- Node 4 mobile -->
+    <div class="hiw-node flex items-center gap-4 px-5 py-4 rounded-2xl w-full border" style="background:rgba(136,192,208,0.07);border-color:rgba(136,192,208,0.28);backdrop-filter:blur(16px);">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(136,192,208,0.14);border:1px solid rgba(136,192,208,0.3);">
+        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#88C0D0">
+          <path d="M480-80q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Zm0-84q104-33 172-132t68-220v-189l-240-90-240 90v189q0 121 68 220t172 132Zm0-316Zm-80 160h160q17 0 28.5-11.5T600-360v-120q0-17-11.5-28.5T560-520v-40q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560v40q-17 0-28.5 11.5T360-480v120q0 17 11.5 28.5T400-320Zm40-200v-40q0-17 11.5-28.5T480-600q17 0 28.5 11.5T520-560v40h-80Z"/>
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-[#88C0D0] text-sm">Fegis — Auto-Replace</div>
+        <div class="text-[#D8DEE9] text-xs opacity-65">Restores real values locally</div>
+        <div class="flex gap-1 mt-1.5 flex-wrap">
+          <span class="text-[10px] px-2 py-0.5 rounded-full text-[#A3BE8C]" style="background:rgba(163,190,140,0.12);border:1px solid rgba(163,190,140,0.25);">Restore</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full text-[#A3BE8C]" style="background:rgba(163,190,140,0.12);border:1px solid rgba(163,190,140,0.25);">Local</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-center py-1">
+      <svg width="20" height="36" viewBox="0 0 20 36">
+        <line x1="10" y1="2" x2="10" y2="26" stroke="#4C566A" stroke-width="1.5" stroke-dasharray="4 3" class="flow-line-v"/>
+        <path d="M4 22 L10 34 L16 22" fill="none" stroke="#88C0D0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- Node 5 mobile -->
+    <div class="hiw-node flex items-center gap-4 px-5 py-4 rounded-2xl w-full border border-white/10" style="background:rgba(59,66,82,0.45);backdrop-filter:blur(16px);">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(163,190,140,0.14);border:1px solid rgba(163,190,140,0.25);">
+        <span class="material-symbols-outlined text-[#A3BE8C]" style="font-size:24px;">verified_user</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-[#ECEFF4] text-sm">You</div>
+        <div class="text-[#D8DEE9] text-xs opacity-65">Reads AI response with real data shown</div>
+        <div class="flex gap-1 mt-1.5 flex-wrap">
+          <span class="text-[10px] px-2 py-0.5 rounded-full text-[#A3BE8C]" style="background:rgba(163,190,140,0.12);border:1px solid rgba(163,190,140,0.25);">Private</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full text-[#A3BE8C]" style="background:rgba(163,190,140,0.12);border:1px solid rgba(163,190,140,0.25);">Safe</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end mobile flow -->
+
+  <!-- Bottom callout strip -->
+  <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+    <div class="flex items-start gap-3 px-4 py-3 rounded-xl" style="background:rgba(59,66,82,0.35);border:1px solid rgba(255,255,255,0.06);">
+      <span class="material-symbols-outlined text-[#88C0D0] text-lg mt-0.5">lock</span>
+      <div>
+        <div class="text-xs font-semibold text-[#ECEFF4] mb-0.5">100% Local</div>
+        <div class="text-[11px] text-[#D8DEE9] opacity-60">Detection &amp; replacement run only in your browser.</div>
+      </div>
+    </div>
+    <div class="flex items-start gap-3 px-4 py-3 rounded-xl" style="background:rgba(59,66,82,0.35);border:1px solid rgba(255,255,255,0.06);">
+      <span class="material-symbols-outlined text-[#A3BE8C] text-lg mt-0.5">swap_horiz</span>
+      <div>
+        <div class="text-xs font-semibold text-[#ECEFF4] mb-0.5">Seamless Restore</div>
+        <div class="text-[11px] text-[#D8DEE9] opacity-60">AI responses show your original data, not tokens.</div>
+      </div>
+    </div>
+    <div class="flex items-start gap-3 px-4 py-3 rounded-xl" style="background:rgba(59,66,82,0.35);border:1px solid rgba(255,255,255,0.06);">
+      <span class="material-symbols-outlined text-[#EBCB8B] text-lg mt-0.5">deployed_code</span>
+      <div>
+        <div class="text-xs font-semibold text-[#ECEFF4] mb-0.5">Works Everywhere</div>
+        <div class="text-[11px] text-[#D8DEE9] opacity-60">ChatGPT, Grok, Gemini, Perplexity &amp; more.</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 </section>
 

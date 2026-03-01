@@ -66,6 +66,56 @@ function getInputText(el: HTMLElement): string {
   return el.innerText || el.textContent || ''
 }
 
+/** Get caret position as character offset (for contenteditable). */
+function getCaretCharOffset(el: HTMLElement): number {
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0) return -1
+  const range = sel.getRangeAt(0)
+  const pre = range.cloneRange()
+  pre.selectNodeContents(el)
+  pre.setEnd(range.startContainer, range.startOffset)
+  return pre.toString().length
+}
+
+/** Set caret to character offset (for contenteditable). */
+function setCaretCharOffset(el: HTMLElement, offset: number) {
+  const sel = window.getSelection()
+  if (!sel) return
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+  let remaining = offset
+  let node: Node | null = walker.nextNode()
+  while (node) {
+    const len = node.textContent?.length || 0
+    if (remaining <= len) {
+      const range = document.createRange()
+      range.setStart(node, remaining)
+      range.collapse(true)
+      sel.removeAllRanges()
+      sel.addRange(range)
+      return
+    }
+    remaining -= len
+    node = walker.nextNode()
+  }
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  range.collapse(false)
+  sel.removeAllRanges()
+  sel.addRange(range)
+}
+
+/**
+ * Flatten contenteditable DOM after paste so highlight overlay layout matches.
+ * Same effect as clicking Redacted/Original: set plain text via adapter.
+ */
+function normalizePastedContent(el: HTMLElement) {
+  if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) return
+  const caret = getCaretCharOffset(el)
+  const text = getInputText(el)
+  adapter.setInputText(el, text)
+  if (caret >= 0) setCaretCharOffset(el, caret)
+}
+
 function syncReplacements() {
   const replacements = currentMatches.map(m => {
     const useTokens = autoReplace || activeMode === 'labels';
@@ -260,7 +310,24 @@ function onInputFound(inputEl: HTMLElement) {
   inputEl.addEventListener('input', () => debouncedProcess(inputEl))
   inputEl.addEventListener('keyup', () => debouncedProcess(inputEl))
   inputEl.addEventListener('paste', () => {
-    setTimeout(() => processInput(inputEl), 50)
+    // Long pastes: contenteditable gets rich DOM (<p>, <br>, etc.) so overlay layout
+    // doesn't match. Normalize to plain text (same as Redacted button) so highlights align.
+    const runNormalizeAndProcess = () => {
+      if (dead || currentInputEl !== inputEl) return
+      normalizePastedContent(inputEl)
+      lastProcessedText = ''
+      processInput(inputEl)
+    }
+    setTimeout(runNormalizeAndProcess, 100)
+    // Second pass: ChatGPT/React may re-render and re-apply rich HTML; normalize again
+    // so alignment sticks. Only run if input still focused so we don't overwrite elsewhere.
+    setTimeout(() => {
+      if (dead || currentInputEl !== inputEl) return
+      if (!inputEl.contains(document.activeElement) && document.activeElement !== inputEl) return
+      normalizePastedContent(inputEl)
+      lastProcessedText = ''
+      processInput(inputEl)
+    }, 400)
   })
   inputEl.addEventListener('focus', () => debouncedProcess(inputEl))
 

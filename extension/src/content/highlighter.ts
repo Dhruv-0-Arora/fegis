@@ -171,11 +171,10 @@ function getClipBounds(el: HTMLElement): { top: number; right: number; bottom: n
 
 function positionHighlightLayer(inputEl: HTMLElement, highlightDiv: HTMLDivElement) {
   const rect = getInputRect(inputEl)
-  const scrollX = window.scrollX
-  const scrollY = window.scrollY
 
-  const top = rect.top + scrollY
-  const left = rect.left + scrollX
+  // Use fixed positioning to avoid extending the document's scrollable area
+  const top = rect.top
+  const left = rect.left
   if (
     !lastInputRect ||
     lastInputRect.top !== top ||
@@ -184,7 +183,7 @@ function positionHighlightLayer(inputEl: HTMLElement, highlightDiv: HTMLDivEleme
     lastInputRect.height !== rect.height
   ) {
     lastInputRect = { top, left, width: rect.width, height: rect.height }
-    highlightDiv.style.position = 'absolute'
+    highlightDiv.style.position = 'fixed'
     highlightDiv.style.top = `${top}px`
     highlightDiv.style.left = `${left}px`
     highlightDiv.style.width = `${rect.width}px`
@@ -206,11 +205,48 @@ function positionHighlightLayer(inputEl: HTMLElement, highlightDiv: HTMLDivEleme
   }
 }
 
+// Returns the rect of the stable visible input area.
+// When the input element itself is a scroll container (e.g. Grok ProseMirror),
+// its rect is already stable. When the input is a child inside a scrolling
+// parent (e.g. ChatGPT), we use the parent's rect so badges/panels don't drift
+// upward as the user scrolls the content.
+function getAnchorRect(): DOMRect {
+  if (!state) return new DOMRect()
+  const { inputEl, scrollContainer } = state
+  return scrollContainer !== inputEl
+    ? scrollContainer.getBoundingClientRect()
+    : inputEl.getBoundingClientRect()
+}
+
+function positionBadge() {
+  if (!state) return
+  const { badgeDiv } = state
+  if (badgeDiv.style.display === 'none') return
+  const rect = getAnchorRect()
+  badgeDiv.style.top = `${Math.max(4, rect.top - 30)}px`
+  badgeDiv.style.left = `${rect.right}px`
+}
+
+function positionWarning() {
+  if (!state) return
+  const { warningDiv, inputEl } = state
+  if (warningDiv.style.display === 'none') return
+  const clip = getClipBounds(inputEl)
+  const clipW = clip.right - clip.left
+  warningDiv.style.position = 'fixed'
+  warningDiv.style.width = 'auto'
+  warningDiv.style.left = `${clip.left + clipW / 2}px`
+  warningDiv.style.transform = 'translateX(-50%)'
+  warningDiv.style.bottom = `${window.innerHeight - clip.bottom}px`
+}
+
 function startPositionLoop() {
   if (!state) return
   function loop() {
     if (!state) return
     positionHighlightLayer(state.inputEl, state.highlightDiv)
+    positionBadge()
+    positionWarning()
     syncScroll()
     state.rafId = requestAnimationFrame(loop)
   }
@@ -366,7 +402,7 @@ export function renderHighlights(text: string, matches: PIIMatch[], autoReplace:
 
 function updateBadge(count: number, autoReplace: boolean = false) {
   if (!state) return
-  const { badgeDiv, inputEl } = state
+  const { badgeDiv } = state
 
   if (autoReplace) { // Auto Replace ON → handles everything automatically, never show badge
     badgeDiv.style.display = 'none'
@@ -379,14 +415,12 @@ function updateBadge(count: number, autoReplace: boolean = false) {
     return
   }
 
-  const rect = getInputRect(inputEl)
-  const scrollX = window.scrollX
-  const scrollY = window.scrollY
+  const rect = getAnchorRect()
 
   badgeDiv.style.display = 'flex'
-  badgeDiv.style.position = 'absolute'
-  badgeDiv.style.top = `${rect.top + scrollY - 30}px`
-  badgeDiv.style.left = `${rect.right + scrollX}px`
+  badgeDiv.style.position = 'fixed'
+  badgeDiv.style.top = `${Math.max(4, rect.top - 30)}px`
+  badgeDiv.style.left = `${rect.right}px`
   badgeDiv.style.zIndex = '2147483646'
   badgeDiv.title = `${count} PII item${count > 1 ? 's' : ''} detected`
 
@@ -462,23 +496,31 @@ export function hideInspectPanel() {
 
 function positionInspectPanel() {
   if (!state) return
-  const { inspectPanelDiv, inputEl } = state
-  const rect = getInputRect(inputEl)
+  const { inspectPanelDiv } = state
+  const rect = getAnchorRect()
+
+  // Guard: detached or hidden element returns a zero rect
+  if (rect.width === 0 && rect.height === 0) return
+
   const panelW = 400
   const panelMaxH = 480
   const margin = 12
 
-  let left = rect.right + margin
-  if (left + panelW > window.innerWidth) {
-    left = rect.left - panelW - margin
-  }
-  if (left < margin) left = margin
+  // Badge sits just above the visible input area at rect.top - 30.
+  // Open the panel just below the badge, right-aligned to the input's right edge.
+  const badgeBottom = Math.max(4, rect.top - 30) + 32  // badge top + approx badge height
+  let top = badgeBottom + 4
+  let left = Math.max(margin, rect.right - panelW)
 
-  let top = rect.top
+  // Clamp to viewport
   if (top + panelMaxH > window.innerHeight) {
     top = Math.max(margin, window.innerHeight - panelMaxH - margin)
   }
+  if (left + panelW > window.innerWidth) {
+    left = Math.max(margin, window.innerWidth - panelW - margin)
+  }
 
+  inspectPanelDiv.style.position = 'fixed'
   inspectPanelDiv.style.left = `${left}px`
   inspectPanelDiv.style.top = `${top}px`
 }
@@ -690,17 +732,12 @@ export function scheduleHide() {
 
 export function showBlockWarning() {
   if (!state) return
-  const { warningDiv, inputEl } = state
+  const { warningDiv } = state
 
   if (state.warningTimer) clearTimeout(state.warningTimer)
 
-  const rect = getInputRect(inputEl)
-  const scrollX = window.scrollX
-  const scrollY = window.scrollY
-
   warningDiv.style.display = 'block'
-  warningDiv.style.top = `${rect.bottom + scrollY + 6}px`
-  warningDiv.style.left = `${rect.left + scrollX}px`
+  positionWarning()
 
   warningDiv.style.animation = 'none'
   void warningDiv.offsetWidth

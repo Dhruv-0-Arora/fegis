@@ -1,124 +1,53 @@
-# Fegis — CheeseHacks 2026 Submission
-
-> Built at CheeseHacks 2026 · February 28 – March 1, 2026
-
----
-
-## Project Title & Description
-
-**Fegis** is a Chrome extension that acts as a privacy firewall between you and AI chatbots. It scans your messages in real time, highlights every piece of personally identifiable information (PII) it finds, and lets you replace it with safe tokens or realistic fake data before anything leaves your browser — all locally, with zero external requests.
-
----
-
-## GitHub Repository
-
-🔗 **[github.com/TODO/fegis](https://github.com/TODO/fegis)**
-
-Setup instructions are in [`README.md`](./README.md).
-
----
-
-## Live Demo / Video
-
-🌐 **Live demo:** [TODO — deployed URL]
-
-🎥 **Video walkthrough:** [TODO — YouTube/Vimeo link]
-
----
-
-## Team Members
-
-- TODO — add team members
-
----
-
-## Technologies Used
-
-`TypeScript` `React 19` `Vite 7` `Chrome Extensions MV3` `pdfjs-dist` `Bun` `Tailwind CSS`
-
----
-
-## Built at CheeseHacks
-
-This project was built entirely during CheeseHacks 2026 (February 28 – March 1, 2026). ✅
-
----
-
 ## Inspiration
 
-AI assistants are part of everyday work now — people paste in meeting notes, support tickets, internal docs, and debugging logs without thinking twice. But those messages contain real names, email addresses, phone numbers, credit card numbers, and API keys that get sent to third-party servers and used for training data. There's no friction, no warning, nothing.
+The idea came from that creepy feeling you get when you realize Big Tech is essentially having access to everything you tell an AI. Recently, we learned about Pentagon asking companies like Anthropic to help monitor what people are saying, and it made us realize: if someday, we can't trust the companies behind the models, we need to take control ourselves. We wanted to build a safety net. Something that sits quietly in the background and catches your private info before it ever leaves your computer. We knew that if a privacy tool is a "hassle," nobody will use it. So, our goal was simple: maximum privacy with zero compromise on convenience.
 
-We wanted to build the thing that *should already exist*: a quiet layer that watches what you're about to send, flags anything sensitive, and gives you a one-click way to clean it up. Like a spell checker, but for privacy.
+## What it does
 
----
+**Fegis** is basically a bouncer for your browser. When you're chatting with LLM like ChatGPT or Gemini, it sits in the middle and watches for things you probably shouldn't be sharin - like your real name, phone number, credit card, or even API keys. Just like Grammarly catches your typos, Fegis catches your privacy leaks before they happen.
 
-## What It Does
+You can set it to two modes:
 
-Fegis installs as a Chrome extension and works silently in the background on ChatGPT, Gemini, Claude, Copilot, Grok, DeepSeek, and any site with a standard text input.
+- **Block Mode**: This is your manual check. If Fegis spots something sensitive, it stops the message and asks, "Hey, are you sure you want to share this?" You can then choose to send it anyway or mask it using:
+  - **Tokens**: Swaps your info for labels like `[NAME_1]` or `[EMAIL_2]`. It remembers these, so the same name always gets the same token.
+  - **Fake Data**: Generates "real-looking" fakes. Your phone number stays phone-shaped, and your credit card still looks like a credit card, but the numbers are deterministic fakes seeded by your real data.
+- **Auto-Replacement Mode**: This is for when you want privacy without the hassle.
+  - **What you see**: Everything on the page looks totally normal. You see your real info in the messages you send and the replies you get back.
+  - **What the AI sees**: Fegis automatically swaps your real info for those fakes/tags in real-time before it hits the AI's servers.
+  - **The Benefit**: You can copy an AI-optimized email directly to your clipboard with your real name already in it, even though the AI never actually knew who you were. If you’re ever curious about what the AI actually received, just **hover over the text**. A tooltip will show you the mask that was sent (e.g., seeing "sent as Dr. Smith" while your screen shows your real name).
 
-As you type, it runs your message through 9 specialized detectors covering names, emails, phone numbers, financial data (with Luhn validation), SSNs, addresses, API keys, URLs, IDs, dates, file paths, and log entries. Anything suspicious gets color-coded highlights directly in the input box.
+## How we built it
 
-Before you hit send, you can choose how to handle flagged content:
-- **Tokens mode** — replaces PII with structured placeholders like `[NAME_1]` and `[EMAIL_2]`. The AI never sees the real data, and responses with tokens can be automatically unmasked back to the originals in your browser.
-- **Fake data mode** — swaps in deterministically generated realistic-looking fake values. Same original always produces the same fake, so conversations stay consistent.
+We built this as a Chrome extension using **React** and **TypeScript**. Since we wanted to keep everything private, all the "detecting" happens right in your browser—nothing is sent to a server. We used some clever libraries to help us read files like PDFs and Word docs, and even used OCR to "read" text inside images you try to upload.
 
-There's also a companion website with an interactive demo where you can paste text or upload a PDF and see the detection engine work in real time.
+## Challenges we ran into
 
----
+The hardest part was "intercepting" the messages. Modern AI sites don't just send a simple text message; they use websocket to stream the conversation back and forth. Trying to catch those bits of data without breaking the chat was hard. We spent countless hours doing heavy network debugging and digging into the browser's "plumbing" just to make sure our interception was invisible and seamless.
 
-## How We Built It
+We also struggled with how to actually *find* the private info. We didn't want to guess, so we ran comprehensive head-to-head tests between three different approaches:
 
-The extension runs across four execution contexts that each handle a distinct concern:
+- **Local LLMs**: While powerful, they were way too slow and resource-heavy for a browser extension.
+- **NER (Named Entity Recognition) Models**: These offered great accuracy but were unstable and difficult to bundle without lagging the browser.
+- **Regex Patterns**: These were the surprise MVP.
 
-**Content script (isolated world)** monitors input elements, runs text through the detection engine on every keystroke (debounced), and renders transparent highlight overlays directly on top of the textarea using z-indexed positioned spans.
+Our results showed that **Regex won** by a landslide in terms of speed and stability while maintaining a high success rate for detection. By building a hybrid system centered on these optimized patterns, we created a tool that catches secrets instantly as you type, without your computer breaking a sweat.
 
-**Fetch interceptor (main world)** is injected before any page scripts run and wraps the native `fetch`, `XMLHttpRequest`, and `WebSocket` APIs. This lets us intercept outgoing requests at the lowest level, apply replacements to the body, and optionally unmask incoming responses — without the page ever knowing.
+## Accomplishments that we're proud of
 
-**Service worker** handles settings persistence via `chrome.storage`, maintains the token/replacement maps in session storage, and broadcasts changes to all active tabs.
+We’re really hyped that we got **local file scanning** to work. People often leak sensitive data through file uploads, so being able to scan a PDF or a screenshot for secrets entirely within your browser, without a single byte ever leaving your RAM, is a massive win for privacy.
 
-**Popup UI** is a React app for toggling the extension, switching modes, managing custom blocklists, and reviewing the replacement map for the current session.
+We are also proud of the **speed and accuracy** of our detection engine. We found a "sweet spot" that catches PII instantly as you type without slowing your computer down at all. Finally, seeing the **Auto-Replace mode** work seamlessly was a huge highlight for us. It’s pretty cool to see your real info on the screen while knowing the AI is only receiving safe, masked data. It proves that you don't have to give up convenience to keep your life private.
 
-The detection engine is a pipeline of pattern matchers. Each detector has its own scoring logic, and overlapping matches are resolved by confidence score. The fake data generator uses a DJB2 hash of the original value as a seed so replacements are deterministic — the same SSN always generates the same fake one, formatted identically.
+## What we learned
 
-The website shares the same detection engine via a Vite path alias (`@extension → ../extension/src`), so the live demo is always in sync with the actual extension.
+We learned that building a Chrome extension is way more complicated than it looks! You have to coordinate between several different isolated execution environment, like content scripts and background service worker, that all live in their own separate environment. Getting all these parts to communicate securely without breaking the site was a real challenge.
 
----
+We also learned how to build and deploy a polished web app using Vercel to host our interactive demo.
 
-## Challenges We Ran Into
+Most importantly, we realized just how much personal data we all accidentally leak every day. Seeing Fegis highlight secrets in real-time really showed us how much we share when we’re just trying to get an AI to help us with work.
 
-**Getting into the main world before the page.** Modern AI chat apps use complex JavaScript frameworks that patch `fetch` and `XMLHttpRequest` themselves. We had to inject the interceptor via `web_accessible_resources` with `world: "MAIN"` at `document_start` to win the race condition and wrap the native APIs before any page script could.
+## What's next for Fegis
 
-**Site adapter fragility.** Every AI platform structures its input differently. ChatGPT uses a `contenteditable` div, Claude uses ProseMirror, Gemini uses a custom element. Building per-site adapters without them breaking on every UI update required writing robust fallbacks and frequent testing.
+We want to make the "fake" data even more realistic so the AI doesn't get confused by the context. We're also looking into even smarter ways to detect PI, like training small models on our own, to further increase our detection rates.
 
-**Highlight overlay alignment.** Overlaying colored spans on a textarea without disrupting the user's ability to type, select, and scroll was surprisingly hard. The overlay has to match the textarea's font, line height, padding, scrollTop, and word-wrap exactly — any mismatch and the highlights drift. We ended up syncing scroll position on every input event.
-
-**Keeping fake data consistent.** The AI needs to receive consistent fake values across a conversation — if you paste a name twice, it needs to always map to the same fake name. We solved this with deterministic hashing so there's no state that needs to be persisted mid-conversation.
-
----
-
-## Accomplishments That We're Proud Of
-
-- **Zero external requests.** Everything — detection, tokenization, fake generation — runs locally in the browser. No API calls, no telemetry, no backend.
-- **13 PII categories** detected with a single pass through an efficient scoring pipeline.
-- **Cross-platform support** for 6 major AI platforms out of the box, with a generic fallback that works on most other sites.
-- **PDF scanning in the demo.** The website demo lets you drop a PDF and see every piece of PII extracted and highlighted in seconds, using the exact same engine as the extension.
-- **Response unmasking.** Being able to send tokenized messages and then see real names restored in the AI's reply — without the AI ever touching the real data — was a technically satisfying problem to solve.
-
----
-
-## What We Learned
-
-Building a browser extension that touches network requests taught us a lot about the browser's security model and why certain things are hard on purpose. The separation between isolated worlds and the main world exists for good reasons, and working within those constraints (rather than around them) kept the extension genuinely safe.
-
-We also learned that PII detection is harder than regex. Names are context-dependent, dates are ambiguous, phone number formats vary by country, and API keys look different across every provider. The gap between "catches most things" and "catches everything with zero false positives" is huge — we spent a lot of time tuning confidence scores and testing edge cases.
-
----
-
-## What's Next for Fegis
-
-- **Firefox support** — port the MV3 manifest to MV2 for Firefox compatibility
-- **More platforms** — Slack, Notion, Linear, email clients
-- **Smarter name detection** — the current approach misses uncommon names and flags some common words; a lightweight local ML model would help
-- **Org-wide deployment** — a managed configuration option so IT teams can push a standard blocklist to all employees
-- **Audit log** — an optional local log of what was detected and masked per session, exportable for compliance workflows
-- **Firefox / Safari extensions** — expand beyond Chrome
+Next, we want to add **sync across accounts**. This would allow different devices to remember how your info was changed, so you can seamlessly view your masked chats across multiple computers without losing track of what’s what.

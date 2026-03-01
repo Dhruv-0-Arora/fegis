@@ -113,16 +113,23 @@ const geminiAdapter: SiteAdapter = {
 
 const grokAdapter: SiteAdapter = {
   name: 'Grok',
-  isContentEditable: false,
+  isContentEditable: true,
   getInputElement: () => querySelector([
+    'div.tiptap.ProseMirror[contenteditable="true"]',
+    'div.ProseMirror[contenteditable="true"]',
+    '.query-bar div[contenteditable="true"]',
+    'div[contenteditable="true"][tabindex="0"]',
     'textarea',
+    'div[contenteditable="true"]',
   ]) || getVisibleInput(),
   getSendButton: () => querySelector([
-    'button[aria-label="Send"]',
+    'button[aria-label="Submit"]',
     'button[type="submit"]',
+    'button[aria-label="Send"]',
+    'button[aria-label="Send message"]',
   ]),
   getResponseContainer: () => {
-    const msgs = document.querySelectorAll<HTMLElement>('.message-bubble')
+    const msgs = document.querySelectorAll<HTMLElement>('.message-bubble, [data-testid*="message"], [class*="response"]')
     return msgs.length > 0 ? msgs[msgs.length - 1] : null
   },
   getInputText: getTextFromElement,
@@ -167,6 +174,36 @@ const deepseekAdapter: SiteAdapter = {
   setInputText: setTextOnElement,
 }
 
+function showClipboardToast() {
+  const existing = document.querySelector('.pii-shield-clipboard-toast')
+  if (existing) existing.remove()
+
+  const toast = document.createElement('div')
+  toast.className = 'pii-shield-clipboard-toast'
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2147483647;
+    background: #2E3440;
+    border: 1px solid #88C0D0;
+    color: #ECEFF4;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: pii-toast-in 0.2s ease-out;
+  `
+  toast.innerHTML = `<span style="color:#A3BE8C;">&#10003;</span> Copied redacted text — paste it into the input`
+  document.body.appendChild(toast)
+  setTimeout(() => toast.remove(), 3000)
+}
+
 const perplexityAdapter: SiteAdapter = {
   name: 'Perplexity',
   isContentEditable: false,
@@ -186,7 +223,11 @@ const perplexityAdapter: SiteAdapter = {
     return msgs.length > 0 ? msgs[msgs.length - 1] : null
   },
   getInputText: getTextFromElement,
-  setInputText: setTextOnElement,
+  setInputText: (_el: HTMLElement, text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      showClipboardToast()
+    })
+  },
 }
 
 const fallbackAdapter: SiteAdapter = {
