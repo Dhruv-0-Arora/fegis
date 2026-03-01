@@ -1,5 +1,5 @@
 import type { PIIMatch, PIIType, TokenMap } from '../types.ts'
-import { getTokenForMatch, getFakeReplacement } from '../tokens/manager.ts'
+import { getTokenForMatch, getFakeReplacement, getTokenMap } from '../tokens/manager.ts'
 
 type ReplaceMode = 'original' | 'labels' | 'replaced'
 let replaceCallback: ((mode: ReplaceMode) => void) | null = null
@@ -576,7 +576,20 @@ function renderInspectPanelContent() {
 export function showTooltip(x: number, y: number, type: PIIType, token: string, original: string, direction: 'outgoing' | 'incoming' = 'outgoing') {
   if (!state) return
   const isAutoReplace = (window as any).__PII_SHIELD_AUTO_REPLACE__?.() || false;
+  console.log(`[PII Shield] showTooltip: dir=${direction}, type=${type}, token=${token}, orig=${original}, autoReplace=${isAutoReplace}`);
+
+  // Nuke ALL stale .pii-shield-tooltip elements that are NOT our current state.tooltipDiv
+  const allTooltips = document.querySelectorAll('.pii-shield-tooltip')
+  console.log(`[PII Shield] Found ${allTooltips.length} .pii-shield-tooltip elements in DOM`)
+  allTooltips.forEach(el => {
+    if (el !== state!.tooltipDiv) {
+      console.log(`[PII Shield] Removing stale tooltip: "${el.textContent?.substring(0, 60)}"`)
+      el.remove()
+    }
+  })
+
   const { tooltipDiv } = state
+
 
   if (tooltipHideTimer) {
     clearTimeout(tooltipHideTimer)
@@ -584,15 +597,34 @@ export function showTooltip(x: number, y: number, type: PIIType, token: string, 
   }
 
   if (direction === 'incoming') {
-    // Incoming response: compact — just show what token was used
+    // Incoming response: show what token was sent to the AI.
+    // The token is pre-resolved and stored as data-pii-token on the span,
+    // so we just display it directly.
     tooltipDiv.innerHTML = `
       <div class="pii-shield-tooltip-stats" style="padding: 8px 12px;">
         <div class="stat">
-          <span class="value" style="color: ${TYPE_COLORS[type] || '#eceff4'}; font-family: monospace; font-size: 13px;">replaced by ${escapeHtml(token)}</span>
+          <span class="value" style="color: ${TYPE_COLORS[type] || '#eceff4'}; font-family: monospace; font-size: 13px;">sent as ${escapeHtml(token)}</span>
         </div>
       </div>
     `
+
   } else {
+    // Outgoing: resolve token defensively from token map
+    let outToken = token
+    if (!/^\[[a-z]+_\d+\]$/.test(token)) {
+      const tmap = getTokenMap()
+      console.log(`[PII Shield] Tooltip fallback resolution. passed_token=${token}, map_size=${Object.keys(tmap).length}`);
+      for (const [tok, orig] of Object.entries(tmap)) {
+        if (orig === original || orig === token) {
+          outToken = tok
+          console.log(`[PII Shield] Resolved token from map: ${tok}`);
+          break
+        }
+      }
+    }
+    if (!/^\[[a-z]+_\d+\]$/.test(outToken)) {
+      console.warn(`[PII Shield] FAILED to resolve valid token for tooltip! outToken=${outToken}`);
+    }
     tooltipDiv.innerHTML = `
       <div class="pii-shield-tooltip-title">
         ${isAutoReplace ? 'Auto Updated (Beta)' : 'Private Information Detected'}
@@ -600,7 +632,7 @@ export function showTooltip(x: number, y: number, type: PIIType, token: string, 
       <div class="pii-shield-tooltip-stats">
         ${isAutoReplace ? `
         <div class="stat">
-          <span class="value" style="color: ${TYPE_COLORS[type] || '#eceff4'}">Replaced to <span style="font-family: monospace; color: #eceff4;">${escapeHtml(token)}</span> to protect privacy</span>
+          <span class="value" style="color: ${TYPE_COLORS[type] || '#eceff4'}">Replaced to <span style="font-family: monospace; color: #eceff4;">${escapeHtml(outToken)}</span> to protect privacy</span>
         </div>
         ` : `
         <div class="stat">
@@ -609,7 +641,7 @@ export function showTooltip(x: number, y: number, type: PIIType, token: string, 
         </div>
         <div class="stat">
           <span class="label">Token</span>
-          <span class="value" style="font-family: monospace;">${escapeHtml(token)}</span>
+          <span class="value" style="font-family: monospace;">${escapeHtml(outToken)}</span>
         </div>
         `}
       </div>
@@ -720,4 +752,27 @@ export function hideBadge() {
   if (state?.badgeDiv) {
     state.badgeDiv.style.display = 'none'
   }
+}
+
+/**
+ * Full UI cleanup: hides badge, tooltip, inspect panel, and clears highlight marks.
+ * Call this on message send, form submit, or any global "reset" event.
+ */
+export function cleanupAllUI() {
+  hideBadge()
+  hideTooltip()
+  hideInspectPanel()
+  if (state) {
+    state.highlightDiv.textContent = ''
+  }
+}
+
+/**
+ * Clear highlight layer content and hide badge (for post-send state).
+ */
+export function clearHighlightLayer() {
+  if (state) {
+    state.highlightDiv.textContent = ''
+  }
+  hideBadge()
 }

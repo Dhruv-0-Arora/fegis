@@ -1,6 +1,6 @@
 import { detectSite } from './sites.ts'
 import { analyzeText } from '../detectors/engine.ts'
-import { createHighlightLayer, renderHighlights, cleanup, showTooltip, scheduleHide, setReplaceCallback, updateInspectPanelData, hideInspectPanel, resetActiveMode, hideTooltip, hideBadge } from './highlighter.ts'
+import { createHighlightLayer, renderHighlights, cleanup, showTooltip, scheduleHide, setReplaceCallback, updateInspectPanelData, hideInspectPanel, resetActiveMode, hideTooltip, hideBadge, getState, cleanupAllUI } from './highlighter.ts'
 import { setCurrentMatches, setupInterceptor, setupResponseUnmasking } from './interceptor.ts'
 import { watchForInput, stopWatching } from './observer.ts'
 import { loadTokenMap, loadReplacementMap, getFakeReplacement, saveReplacementMap, saveTokenMap, getTokenMap, getReplacementMap, getTokenForMatch, getKnownFakeValues } from '../tokens/manager.ts'
@@ -12,6 +12,7 @@ let enabledTypes: PIIType[] = ['NAME', 'EMAIL', 'PHONE', 'FINANCIAL', 'SSN', 'ID
 let customBlockList: string[] = []
 let ignoredTokens = new Set<string>()
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
+let syncTimer: ReturnType<typeof setInterval> | null = null
 let currentInputEl: HTMLElement | null = null
 let lastProcessedText = ''
 let currentMatches: PIIMatch[] = []
@@ -48,6 +49,7 @@ function gracefulShutdown() {
   cleanup()
   stopWatching()
   if (debounceTimer) clearTimeout(debounceTimer)
+  if (syncTimer) clearInterval(syncTimer)
   currentInputEl = null
 }
 
@@ -69,6 +71,40 @@ function syncReplacements() {
     replacements
   }, '*');
   if (autoReplace) saveTokenMap();
+}
+
+/**
+ * Strip PII-shield highlight wrappers from the input element so they
+ * don't bleed into the chat history when the message is committed.
+ */
+function stripHighlightWrappersFromInput() {
+  if (!currentInputEl) return
+  // The highlight marks live in the overlay, not the actual input, so they
+  // shouldn't be in the input DOM.  But for contenteditable elements, the
+  // site may copy inner HTML. Defensively remove any .pii-shield-mark or
+  // .pii-shield-unmasked spans that somehow ended up inside the input.
+  const marks = currentInputEl.querySelectorAll('.pii-shield-mark, .pii-shield-unmasked, .pii-shield-highlight-layer')
+  marks.forEach(mark => {
+    const parent = mark.parentNode
+    if (!parent) return
+    // Replace the mark element with its text content
+    const text = document.createTextNode(mark.textContent || '')
+    parent.replaceChild(text, mark)
+  })
+}
+
+/**
+ * Full cleanup on message send: strip DOM wrappers, hide all UI, reset state.
+ */
+function cleanupOnSend() {
+  stripHighlightWrappersFromInput()
+  cleanupAllUI()
+  currentMatches = []
+  setCurrentMatches([], autoReplace)
+  storedOriginalText = null
+  storedMatches = []
+  lastProcessedText = ''
+  resetActiveMode()
 }
 
 
@@ -209,6 +245,31 @@ function onInputFound(inputEl: HTMLElement) {
   })
   inputEl.addEventListener('focus', () => debouncedProcess(inputEl))
 
+  // Hide badge and panel on blur, carefully checking if we clicked our UI
+  inputEl.addEventListener('blur', () => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      const state = getState();
+      if (state && active) {
+        if (state.badgeDiv.contains(active) || state.inspectPanelDiv.contains(active)) {
+          return;
+        }
+      }
+      hideBadge();
+      hideInspectPanel();
+    }, 100);
+  });
+
+  // Keep DOM state synced for React/Nextjs sites that clear inputs natively bypassing "input" event
+  if (syncTimer) clearInterval(syncTimer)
+  syncTimer = setInterval(() => {
+    if (dead) return;
+    const currentText = getInputText(inputEl);
+    if (currentText !== lastProcessedText) {
+      processInput(inputEl);
+    }
+  }, 250);
+
   // Hide badge when user clicks into the text box (not on a PII mark highlight)
   inputEl.addEventListener('click', (e) => {
     const target = e.target as HTMLElement
@@ -218,23 +279,51 @@ function onInputFound(inputEl: HTMLElement) {
     }
   })
 
-  // Bug fix #1: hide badge/panel when user sends message (Enter key)
+  // Bug fix #1: hide badge/panel/tooltip and strip highlights when user sends message (Enter key)
   inputEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      hideBadge()
-      hideInspectPanel()
-      resetActiveMode()
-      // Also clear storedOriginalText so next message starts fresh (bug fix #2)
-      storedOriginalText = null
-      storedMatches = []
-      lastProcessedText = ''
+      // Delay cleanup slightly so the site can capture the input first
+      setTimeout(() => cleanupOnSend(), 10)
     }
   })
 
   processInput(inputEl)
+
+  // --- Send Button cleanup hook ---
+  // Also hook into the send button to clean up when clicked
+  const sendBtn = adapter.getSendButton()
+  if (sendBtn) {
+    sendBtn.addEventListener('click', () => {
+      // Delay slightly to let the site process the click first
+      setTimeout(() => cleanupOnSend(), 50)
+    }, true)
+  }
+
+  // --- Input cleared detection ---
+  // Watch for the input content being cleared (e.g., site clears after send)
+  // to clean up orphaned UI elements.
+  const inputObserver = new MutationObserver(() => {
+    if (dead) return
+    const currentText = getInputText(inputEl)
+    if (currentText.trim() === '' && currentMatches.length > 0) {
+      // Input was cleared while we had matches — message was likely sent
+      cleanupOnSend()
+    }
+  })
+  inputObserver.observe(inputEl, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ['value']
+  })
 }
 
 function onInputLost(_el: HTMLElement) {
+  if (syncTimer) {
+    clearInterval(syncTimer)
+    syncTimer = null
+  }
   hideInspectPanel()
   cleanup()
   currentInputEl = null
@@ -280,6 +369,7 @@ function init() {
     // Handle hover on input PII highlight marks
     const mark = target.closest?.('.pii-shield-mark') as HTMLElement | null
     if (mark?.dataset.token && mark.dataset.type && mark.dataset.original) {
+      console.log(`[PII Shield] Hovering mark: text=${mark.textContent}, token=${mark.dataset.token}, type=${mark.dataset.type}, orig=${mark.dataset.original}`);
       showTooltip(
         e.clientX,
         e.clientY,
@@ -293,13 +383,13 @@ function init() {
 
     // Handle hover on response unmasked spans
     const unmasked = target.closest?.('.pii-shield-unmasked') as HTMLElement | null
-    if (unmasked?.dataset.piiSentAs) {
+    if (unmasked?.dataset.piiToken) {
       const piiType = (unmasked.dataset.piiType || 'NAME') as PIIType
       showTooltip(
         e.clientX,
         e.clientY,
         piiType,
-        unmasked.dataset.piiSentAs,
+        unmasked.dataset.piiToken,
         unmasked.dataset.piiOriginal || unmasked.textContent || '',
         'incoming'
       )
@@ -316,6 +406,22 @@ function init() {
       scheduleHide()
     }
   })
+
+  // Global click-away handler to dismiss UI elements
+  document.addEventListener('mousedown', (e) => {
+    if (dead) return;
+    const target = e.target as HTMLElement;
+    const mark = target.closest?.('.pii-shield-mark');
+    const badge = target.closest?.('.pii-shield-badge');
+    const panel = target.closest?.('.pii-shield-inspect-panel');
+    const tooltip = target.closest?.('.pii-shield-tooltip');
+
+    if (!mark && !badge && !panel && !tooltip) {
+      hideBadge();
+      hideInspectPanel();
+      hideTooltip();
+    }
+  }, true);
 
   // Click a highlighted mark → replace just that one occurrence, OR click ignore
   document.addEventListener('click', (e) => {
@@ -336,10 +442,6 @@ function init() {
     }
 
     const mark = target.closest?.('.pii-shield-mark') as HTMLElement | null
-    if (!mark && !target.closest?.('.pii-shield-badge') && !target.closest?.('.pii-shield-inspect-panel')) {
-      hideBadge()
-      hideInspectPanel()
-    }
     if (!mark || !currentInputEl) return
 
     if (autoReplace) return // In auto-replace mode, clicking does not replace since it's automatic.

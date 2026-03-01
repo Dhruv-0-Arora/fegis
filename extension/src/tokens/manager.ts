@@ -179,7 +179,15 @@ export async function loadTokenMap(): Promise<TokenMap> {
           return
         }
         if (result.tokenMap) {
-          tokenMap = result.tokenMap as TokenMap
+          const loadedMap = result.tokenMap as TokenMap
+          // Defensively filter out corrupt keys from past bugs (e.g. fake values stored instead of tokens)
+          const validMap: TokenMap = {}
+          for (const [key, value] of Object.entries(loadedMap)) {
+            if (/^\[[a-z]+_\d+\]$/.test(key) || key === PATH_TOKEN) {
+              validMap[key] = value
+            }
+          }
+          tokenMap = validMap
         }
         resolve(getTokenMap())
       })
