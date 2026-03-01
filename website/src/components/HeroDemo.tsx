@@ -113,6 +113,8 @@ export default function HeroDemo() {
   const [redactMode, setRedactMode] = useState<'labels' | 'replaced'>('labels')
   const [fileLoading, setFileLoading] = useState(false)
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const dragCounter = useRef(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -246,11 +248,38 @@ export default function HeroDemo() {
 
         {/* ChatGPT page */}
         <div
-          className="flex flex-col items-center justify-end"
+          className="flex flex-col items-center justify-end relative"
           style={{ background: '#212121', padding: '115px 24px 24px' }}
+          onDragEnter={(e) => { e.preventDefault(); dragCounter.current++; setIsDragging(true) }}
+          onDragLeave={(e) => { e.preventDefault(); dragCounter.current--; if (dragCounter.current === 0) setIsDragging(false) }}
           onDragOver={(e) => e.preventDefault()}
-          onDrop={handleDrop}
+          onDrop={(e) => { dragCounter.current = 0; setIsDragging(false); handleDrop(e) }}
         >
+          {/* Drag overlay */}
+          {isDragging && (
+            <div
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 pointer-events-none"
+              style={{
+                background: 'rgba(33,33,33,0.92)',
+                border: '2px dashed #a3be8c',
+                borderRadius: 'inherit',
+              }}
+            >
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{ background: 'solidrgba(163, 190, 140, 0.15)', border: '1px solidrgba(163, 190, 140, 0.25)' }}
+              >
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#88C0D0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-[#ECEFF4]">Drop your file here</p>
+                <p className="text-xs text-[#4C566A] mt-1">PDF or DOCX</p>
+              </div>
+            </div>
+          )}
+
           <div style={{ marginBottom: 96, opacity: 0.7 }}>{ChatGPTLogo}</div>
 
           {/* Uploaded file badge */}
