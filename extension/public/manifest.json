@@ -15,7 +15,8 @@
   "permissions": [
     "storage",
     "activeTab",
-    "clipboardWrite"
+    "clipboardWrite",
+    "offscreen"
   ],
   "background": {
     "service_worker": "background.js"
@@ -30,7 +31,9 @@
         "*://grok.com/*",
         "*://x.com/i/grok*",
         "*://copilot.microsoft.com/*",
-        "*://chat.deepseek.com/*"
+        "*://chat.deepseek.com/*",
+        "*://www.perplexity.ai/*",
+        "*://perplexity.ai/*"
       ],
       "js": ["content.js"],
       "css": ["assets/highlight.css"],
@@ -45,7 +48,9 @@
         "*://grok.com/*",
         "*://x.com/i/grok*",
         "*://copilot.microsoft.com/*",
-        "*://chat.deepseek.com/*"
+        "*://chat.deepseek.com/*",
+        "*://www.perplexity.ai/*",
+        "*://perplexity.ai/*"
       ],
       "js": ["fetch-interceptor.js"],
       "run_at": "document_start",
@@ -54,7 +59,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["assets/*", "fetch-interceptor.js"],
+      "resources": ["assets/*", "fetch-interceptor.js", "pdf.worker.min.mjs"],
       "matches": ["<all_urls>"]
     }
   ]

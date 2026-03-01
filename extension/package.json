@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && npm run build:ext",
-    "build:ext": "vite build && vite build --mode content && vite build --mode background && vite build --mode interceptor && cp src/content/highlight.css dist/assets/highlight.css",
+    "build:ext": "vite build && vite build --mode content && vite build --mode background && vite build --mode interceptor && vite build --mode offscreen && cp src/content/highlight.css dist/assets/highlight.css && cp public/offscreen.html dist/offscreen.html && cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs dist/pdf.worker.min.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "mammoth": "^1.11.0",
+    "pdfjs-dist": "^5.4.624",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

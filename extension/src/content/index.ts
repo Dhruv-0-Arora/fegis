@@ -1,9 +1,11 @@
 import { detectSite } from './sites.ts'
 import { analyzeText } from '../detectors/engine.ts'
 import { createHighlightLayer, renderHighlights, cleanup, showTooltip, scheduleHide, setReplaceCallback, updateInspectPanelData, hideInspectPanel, resetActiveMode, hideTooltip, hideBadge } from './highlighter.ts'
-import { setCurrentMatches, setupInterceptor, setupResponseUnmasking } from './interceptor.ts'
+import { setCurrentMatches, setFileBlocked, setupInterceptor, setupResponseUnmasking } from './interceptor.ts'
 import { watchForInput, stopWatching } from './observer.ts'
 import { loadTokenMap, loadReplacementMap, getFakeReplacement, saveReplacementMap, saveTokenMap, getTokenMap, getReplacementMap, getTokenForMatch, getKnownFakeValues } from '../tokens/manager.ts'
+import { setupFileHandler, updateFileHandlerSettings, type FileDetectionResult } from './file-handler.ts'
+import { showFileWarning, showScanningIndicator, hideScanningIndicator } from './file-warning.ts'
 import type { PIIMatch, ExtensionSettings, PIIType } from '../types.ts'
 
 let enabled = true
@@ -18,6 +20,9 @@ let currentMatches: PIIMatch[] = []
 let dead = false
 let storedOriginalText: string | null = null
 let storedMatches: PIIMatch[] = []
+let scanningIndicator: HTMLDivElement | null = null
+let activeScanCount = 0
+let cleanupFileHandler: (() => void) | null = null
 
 const adapter = detectSite()
 
@@ -279,17 +284,47 @@ function onInputFound(inputEl: HTMLElement) {
     }
   })
 
+  cleanupFileHandler?.()
+  cleanupFileHandler = setupFileHandler(
+    inputEl,
+    (result: FileDetectionResult) => {
+      setFileBlocked(true)
+      showFileWarning(
+        result,
+        () => { setFileBlocked(true) },
+        () => { setFileBlocked(false) }
+      )
+    },
+    () => {
+      activeScanCount++
+      if (activeScanCount === 1) {
+        scanningIndicator = showScanningIndicator()
+      }
+    },
+    () => {
+      activeScanCount = Math.max(0, activeScanCount - 1)
+      if (activeScanCount === 0) {
+        hideScanningIndicator(scanningIndicator)
+        scanningIndicator = null
+      }
+    }
+  )
+
   processInput(inputEl)
 }
 
 function onInputLost(_el: HTMLElement) {
   hideInspectPanel()
   cleanup()
+  cleanupFileHandler?.()
+  cleanupFileHandler = null
+  setFileBlocked(false)
+  hideScanningIndicator(scanningIndicator)
+  scanningIndicator = null
+  activeScanCount = 0
   currentInputEl = null
   lastProcessedText = ''
   currentMatches = []
-  // Bug fix #2: always clear stored state so the next re-attach starts fresh
-  // and doesn't auto-paste the old redacted/replaced text into the new message.
   storedOriginalText = null
   storedMatches = []
 }
@@ -308,6 +343,7 @@ function init() {
       autoReplace = s.autoReplace || false
       enabledTypes = s.enabledTypes
       customBlockList = s.customBlockList || []
+      updateFileHandlerSettings(enabledTypes, customBlockList)
       syncReplacements()
     }
   })
@@ -426,6 +462,7 @@ try {
       autoReplace = s.autoReplace || false
       enabledTypes = s.enabledTypes
       customBlockList = s.customBlockList || []
+      updateFileHandlerSettings(enabledTypes, customBlockList)
       syncReplacements()
       if (currentInputEl) {
         lastProcessedText = ''

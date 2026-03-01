@@ -1,5 +1,22 @@
 import type { ExtensionSettings, TokenMap } from '../types.ts'
 
+let offscreenReady = false
+
+async function ensureOffscreenDocument() {
+  if (offscreenReady) return
+  const contexts = await chrome.runtime.getContexts({
+    contextTypes: ['OFFSCREEN_DOCUMENT' as chrome.runtime.ContextType],
+  })
+  if (contexts.length === 0) {
+    await chrome.offscreen.createDocument({
+      url: 'offscreen.html',
+      reasons: ['WORKERS' as chrome.offscreen.Reason],
+      justification: 'File parsing and OCR require DOM/Worker access unavailable in service workers',
+    })
+  }
+  offscreenReady = true
+}
+
 const DEFAULT_SETTINGS: ExtensionSettings = {
   enabled: true,
   autoReplace: false,
@@ -93,6 +110,26 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       }
       case 'GET_STATS': {
         return { stats: sessionStats }
+      }
+      case 'PARSE_FILE': {
+        await ensureOffscreenDocument()
+        const result = await new Promise<{ text?: string; error?: string }>((resolve) => {
+          chrome.runtime.sendMessage(
+            {
+              action: 'OFFSCREEN_PARSE',
+              data: message.data,
+              mimeType: message.mimeType,
+            },
+            (res) => {
+              if (chrome.runtime.lastError) {
+                resolve({ error: chrome.runtime.lastError.message })
+              } else {
+                resolve(res ?? { error: 'No response from offscreen document' })
+              }
+            }
+          )
+        })
+        return result
       }
       default:
         return { error: 'Unknown action' }

@@ -5,10 +5,15 @@ import { showBlockWarning } from './highlighter.ts'
 let lastMatches: PIIMatch[] = []
 let interceptActive = false
 let isAutoReplace = false
+let fileBlocked = false
 
 export function setCurrentMatches(matches: PIIMatch[], autoReplace: boolean = false) {
   lastMatches = matches
   isAutoReplace = autoReplace
+}
+
+export function setFileBlocked(blocked: boolean) {
+  fileBlocked = blocked
 }
 
 export function setupInterceptor(adapter: SiteAdapter) {
@@ -17,10 +22,19 @@ export function setupInterceptor(adapter: SiteAdapter) {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      if (isAutoReplace) return
+      if (isAutoReplace && !fileBlocked) return
       const inputEl = adapter.getInputElement()
-      if (!inputEl || lastMatches.length === 0) return
+      if (!inputEl) return
       if (document.activeElement !== inputEl && !inputEl.contains(document.activeElement)) return
+
+      if (fileBlocked) {
+        e.preventDefault()
+        e.stopPropagation()
+        showBlockWarning()
+        return
+      }
+
+      if (lastMatches.length === 0) return
 
       const text = adapter.getInputText(inputEl)
       if (!text.trim()) return
@@ -35,6 +49,13 @@ export function setupInterceptor(adapter: SiteAdapter) {
   const sendBtn = adapter.getSendButton()
   if (sendBtn) {
     sendBtn.addEventListener('click', (e) => {
+      if (fileBlocked) {
+        e.preventDefault()
+        e.stopPropagation()
+        showBlockWarning()
+        return
+      }
+
       if (isAutoReplace) return
       if (lastMatches.length === 0) return
 
