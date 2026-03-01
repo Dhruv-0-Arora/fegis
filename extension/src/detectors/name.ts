@@ -64,15 +64,15 @@ export class NameDetector extends ContextualDetector {
   constructor() {
     super()
 
-    // Title/prefix + capitalized word(s): "Mr. Smith", "Dr. John Doe"
+    // Title/prefix + capitalized word(s): "Mr. Smith", "Dr. John Doe", "Professor Henke"
+    // The prefix is included in the matched text so the whole thing is one token
     this.addRule({
       type: 'NAME',
       score: 90,
       pattern: new RegExp(
-        `\\b[A-Z][a-zA-Z'-]+(?:\\s+[A-Z][a-zA-Z'-]+)*\\b`,
+        `(?:${PREFIXES})\\s+[A-Z][a-zA-Z'-]+(?:\\s+[A-Z][a-zA-Z'-]+)*\\b`,
         'g'
       ),
-      contextBefore: new RegExp(`(?:${PREFIXES})\\s+$`, 'i'),
     })
 
     // Introduction + any word(s): "my name is John", "I'm Sarah", "call me Dave"

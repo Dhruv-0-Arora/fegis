@@ -46,6 +46,15 @@ export function generateFake(original: string, type: PIIType): string {
     case 'NAME': {
       const first = pick(FIRST, s1)
       const last  = pick(LAST, s2)
+      // Detect title prefixes (Mr., Dr., Professor, etc.) and preserve them
+      const titleMatch = original.match(/^(Mr\.|Mrs\.|Ms\.|Mx\.|Dr\.|Prof\.|Sir|Madam|Dame|Lord|Lady|Mister|Miss|Misses|Doctor|Professor|Herr|Frau|Señor|Señora|Don|Doña|Monsieur|Madame|Mademoiselle|Signore|Signora|Signor|Senhor|Senhora)\s+/i)
+      if (titleMatch) {
+        const title = titleMatch[1]
+        const nameOnly = original.slice(titleMatch[0].length).trim()
+        const nameWords = nameOnly.split(/\s+/)
+        const fakeName = nameWords.length === 1 ? last : `${first} ${last}`
+        return `${title} ${fakeName}`
+      }
       return original.trim().split(/\s+/).length === 1 ? first : `${first} ${last}`
     }
 

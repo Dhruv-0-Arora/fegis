@@ -59,6 +59,7 @@ export interface ExtensionSettings {
   enabled: boolean
   enabledTypes: PIIType[]
   customBlockList: string[]
+  autoReplace?: boolean
 }
 
 export type MessageAction =

@@ -1,5 +1,5 @@
 import type { PIIMatch, PIIType, TokenMap } from '../types.ts'
-import { getTokenForMatch, getFakeReplacement } from '../tokens/manager.ts'
+import { getTokenForMatch, getFakeReplacement, getTokenMap } from '../tokens/manager.ts'
 
 type ReplaceMode = 'original' | 'labels' | 'replaced'
 let replaceCallback: ((mode: ReplaceMode) => void) | null = null
@@ -65,9 +65,11 @@ interface HighlightState {
   tooltipDiv: HTMLDivElement
   warningDiv: HTMLDivElement
   inspectPanelDiv: HTMLDivElement
-  scrollSyncHandler: (() => void) | null
+  scrollContainer: HTMLElement
+  scrollListeners: Array<{ el: EventTarget; handler: () => void }>
   resizeObserver: ResizeObserver | null
   warningTimer: ReturnType<typeof setTimeout> | null
+  rafId: number | null
 }
 
 let state: HighlightState | null = null
@@ -101,6 +103,125 @@ function copyStyles(source: HTMLElement, target: HTMLDivElement) {
 
 function getInputRect(el: HTMLElement): DOMRect {
   return el.getBoundingClientRect()
+}
+
+function findScrollContainer(el: HTMLElement): HTMLElement {
+  let node: HTMLElement | null = el
+  while (node && node !== document.body) {
+    const { overflowY } = window.getComputedStyle(node)
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight + 1) {
+      return node
+    }
+    node = node.parentElement
+  }
+  return el
+}
+
+function syncScroll() {
+  if (!state) return
+  const { scrollContainer, highlightDiv } = state
+
+  const maxSourceY = scrollContainer.scrollHeight - scrollContainer.clientHeight
+  if (maxSourceY > 0) {
+    const ratioY = scrollContainer.scrollTop / maxSourceY
+    const maxTargetY = highlightDiv.scrollHeight - highlightDiv.clientHeight
+    highlightDiv.scrollTop = ratioY * maxTargetY
+  } else {
+    highlightDiv.scrollTop = 0
+  }
+
+  const maxSourceX = scrollContainer.scrollWidth - scrollContainer.clientWidth
+  if (maxSourceX > 0) {
+    const ratioX = scrollContainer.scrollLeft / maxSourceX
+    const maxTargetX = highlightDiv.scrollWidth - highlightDiv.clientWidth
+    highlightDiv.scrollLeft = ratioX * maxTargetX
+  } else {
+    highlightDiv.scrollLeft = 0
+  }
+}
+
+let lastInputRect: { top: number; left: number; width: number; height: number } | null = null
+let lastClipPath = ''
+
+function getClipBounds(el: HTMLElement): { top: number; right: number; bottom: number; left: number } {
+  const rect = el.getBoundingClientRect()
+  let top = rect.top
+  let left = rect.left
+  let bottom = rect.bottom
+  let right = rect.right
+
+  let parent = el.parentElement
+  while (parent) {
+    const { overflow, overflowX, overflowY } = window.getComputedStyle(parent)
+    const clips = [overflow, overflowX, overflowY].some(
+      v => v === 'hidden' || v === 'auto' || v === 'scroll' || v === 'clip'
+    )
+    if (clips) {
+      const pr = parent.getBoundingClientRect()
+      top = Math.max(top, pr.top)
+      left = Math.max(left, pr.left)
+      bottom = Math.min(bottom, pr.bottom)
+      right = Math.min(right, pr.right)
+    }
+    parent = parent.parentElement
+  }
+
+  return { top, left, bottom, right }
+}
+
+function positionHighlightLayer(inputEl: HTMLElement, highlightDiv: HTMLDivElement) {
+  const rect = getInputRect(inputEl)
+  const scrollX = window.scrollX
+  const scrollY = window.scrollY
+
+  const top = rect.top + scrollY
+  const left = rect.left + scrollX
+  if (
+    !lastInputRect ||
+    lastInputRect.top !== top ||
+    lastInputRect.left !== left ||
+    lastInputRect.width !== rect.width ||
+    lastInputRect.height !== rect.height
+  ) {
+    lastInputRect = { top, left, width: rect.width, height: rect.height }
+    highlightDiv.style.position = 'absolute'
+    highlightDiv.style.top = `${top}px`
+    highlightDiv.style.left = `${left}px`
+    highlightDiv.style.width = `${rect.width}px`
+    highlightDiv.style.height = `${rect.height}px`
+    highlightDiv.style.zIndex = '2147483640'
+    highlightDiv.style.pointerEvents = 'none'
+    highlightDiv.style.background = 'transparent'
+  }
+
+  const clip = getClipBounds(inputEl)
+  const clipTop = Math.max(0, clip.top - rect.top)
+  const clipRight = Math.max(0, rect.right - clip.right)
+  const clipBottom = Math.max(0, rect.bottom - clip.bottom)
+  const clipLeft = Math.max(0, clip.left - rect.left)
+  const newClip = `inset(${clipTop}px ${clipRight}px ${clipBottom}px ${clipLeft}px)`
+  if (newClip !== lastClipPath) {
+    lastClipPath = newClip
+    highlightDiv.style.clipPath = newClip
+  }
+}
+
+function startPositionLoop() {
+  if (!state) return
+  function loop() {
+    if (!state) return
+    positionHighlightLayer(state.inputEl, state.highlightDiv)
+    syncScroll()
+    state.rafId = requestAnimationFrame(loop)
+  }
+  state.rafId = requestAnimationFrame(loop)
+}
+
+function stopPositionLoop() {
+  if (state?.rafId != null) {
+    cancelAnimationFrame(state.rafId)
+    state.rafId = null
+  }
 }
 
 export function createHighlightLayer(inputEl: HTMLElement): HighlightState {
@@ -143,47 +264,57 @@ export function createHighlightLayer(inputEl: HTMLElement): HighlightState {
   document.body.appendChild(warningDiv)
   document.body.appendChild(inspectPanelDiv)
 
+  lastInputRect = null
   positionHighlightLayer(inputEl, highlightDiv)
   copyStyles(inputEl, highlightDiv)
 
-  const scrollSyncHandler = () => {
-    highlightDiv.scrollTop = (inputEl as HTMLTextAreaElement).scrollTop ?? 0
-    highlightDiv.scrollLeft = (inputEl as HTMLTextAreaElement).scrollLeft ?? 0
+  const scrollContainer = findScrollContainer(inputEl)
+  const scrollListeners: Array<{ el: EventTarget; handler: () => void }> = []
+
+  const scrollHandler = () => {
+    positionHighlightLayer(inputEl, highlightDiv)
+    syncScroll()
   }
-  inputEl.addEventListener('scroll', scrollSyncHandler)
+
+  scrollContainer.addEventListener('scroll', scrollHandler, { passive: true })
+  scrollListeners.push({ el: scrollContainer, handler: scrollHandler })
+
+  if (scrollContainer !== inputEl) {
+    inputEl.addEventListener('scroll', scrollHandler, { passive: true })
+    scrollListeners.push({ el: inputEl, handler: scrollHandler })
+  }
+
+  window.addEventListener('scroll', scrollHandler, { passive: true })
+  scrollListeners.push({ el: window, handler: scrollHandler })
 
   const resizeObserver = new ResizeObserver(() => {
+    lastInputRect = null
     positionHighlightLayer(inputEl, highlightDiv)
     copyStyles(inputEl, highlightDiv)
+    syncScroll()
   })
   resizeObserver.observe(inputEl)
 
-  state = { inputEl, highlightDiv, badgeDiv, tooltipDiv, warningDiv, inspectPanelDiv, scrollSyncHandler, resizeObserver, warningTimer: null }
+  state = { inputEl, highlightDiv, badgeDiv, tooltipDiv, warningDiv, inspectPanelDiv, scrollContainer, scrollListeners, resizeObserver, warningTimer: null, rafId: null }
   panelOpen = false
   lastPanelData = null
   activeReplaceMode = 'original'
+
+  startPositionLoop()
+
   return state
 }
 
-function positionHighlightLayer(inputEl: HTMLElement, highlightDiv: HTMLDivElement) {
-  const rect = getInputRect(inputEl)
-  const scrollX = window.scrollX
-  const scrollY = window.scrollY
-
-  highlightDiv.style.position = 'absolute'
-  highlightDiv.style.top = `${rect.top + scrollY}px`
-  highlightDiv.style.left = `${rect.left + scrollX}px`
-  highlightDiv.style.width = `${rect.width}px`
-  highlightDiv.style.height = `${rect.height}px`
-  highlightDiv.style.zIndex = '2147483640'
-  highlightDiv.style.pointerEvents = 'none'
-  highlightDiv.style.background = 'transparent'
-}
-
-export function renderHighlights(text: string, matches: PIIMatch[]) {
+export function renderHighlights(text: string, matches: PIIMatch[], autoReplace: boolean = false) {
   if (!state) return
 
   const { highlightDiv, inputEl } = state
+
+  if (matches.length === 0) {
+    state.highlightDiv.innerHTML = ''
+    updateBadge(0, autoReplace)
+    return
+  }
 
   positionHighlightLayer(inputEl, highlightDiv)
 
@@ -220,21 +351,30 @@ export function renderHighlights(text: string, matches: PIIMatch[]) {
     frag.appendChild(document.createTextNode(text.substring(currentIndex)))
   }
 
-  highlightDiv.textContent = ''
-  highlightDiv.appendChild(frag)
+  // Prevent re-rendering and re-showing badge if the highlight layer is exactly the same 
+  const oldHtml = highlightDiv.innerHTML
+  const tempDiv = document.createElement('div')
+  tempDiv.appendChild(frag)
+  const newHtml = tempDiv.innerHTML
 
-  highlightDiv.scrollTop = (inputEl as HTMLTextAreaElement).scrollTop ?? 0
-  highlightDiv.scrollLeft = (inputEl as HTMLTextAreaElement).scrollLeft ?? 0
-
-  updateBadge(matches.length)
+  if (oldHtml !== newHtml) {
+    highlightDiv.innerHTML = newHtml
+    syncScroll()
+    updateBadge(matches.length, autoReplace)
+  }
 }
 
-function updateBadge(count: number) {
+function updateBadge(count: number, autoReplace: boolean = false) {
   if (!state) return
   const { badgeDiv, inputEl } = state
 
-  const keepVisible = activeReplaceMode === 'labels' || activeReplaceMode === 'replaced'
-  if (count === 0 && !keepVisible) {
+  if (autoReplace) { // Auto Replace ON → handles everything automatically, never show badge
+    badgeDiv.style.display = 'none'
+    hideInspectPanel()
+    return
+  }
+
+  if (count === 0) {
     badgeDiv.style.display = 'none'
     return
   }
@@ -433,22 +573,87 @@ function renderInspectPanelContent() {
 
 // --- Tooltip ---
 
-export function showTooltip(x: number, y: number, type: PIIType, token: string, original: string) {
+export function showTooltip(x: number, y: number, type: PIIType, token: string, original: string, direction: 'outgoing' | 'incoming' = 'outgoing') {
   if (!state) return
+  const isAutoReplace = (window as any).__PII_SHIELD_AUTO_REPLACE__?.() || false;
+  console.log(`[PII Shield] showTooltip: dir=${direction}, type=${type}, token=${token}, orig=${original}, autoReplace=${isAutoReplace}`);
+
+  // Nuke ALL stale .pii-shield-tooltip elements that are NOT our current state.tooltipDiv
+  const allTooltips = document.querySelectorAll('.pii-shield-tooltip')
+  console.log(`[PII Shield] Found ${allTooltips.length} .pii-shield-tooltip elements in DOM`)
+  allTooltips.forEach(el => {
+    if (el !== state!.tooltipDiv) {
+      console.log(`[PII Shield] Removing stale tooltip: "${el.textContent?.substring(0, 60)}"`)
+      el.remove()
+    }
+  })
+
   const { tooltipDiv } = state
+
 
   if (tooltipHideTimer) {
     clearTimeout(tooltipHideTimer)
     tooltipHideTimer = null
   }
 
-  const color = TYPE_COLORS[type] || '#81a1c1'
-  tooltipDiv.innerHTML = `
-    <div class="pii-shield-tooltip-type">${type}</div>
-    <div class="pii-shield-tooltip-original">"${escapeHtml(original)}"</div>
-    <div class="pii-shield-tooltip-token" style="color:${color}">&rarr; ${escapeHtml(token)}</div>
-  `
-  const TOP_OFFSET = 70
+  if (direction === 'incoming') {
+    // Incoming response: show what token was sent to the AI.
+    // The token is pre-resolved and stored as data-pii-token on the span,
+    // so we just display it directly.
+    tooltipDiv.innerHTML = `
+      <div class="pii-shield-tooltip-stats" style="padding: 8px 12px;">
+        <div class="stat">
+          <span class="value" style="color: ${TYPE_COLORS[type] || '#eceff4'}; font-family: monospace; font-size: 13px;">sent as ${escapeHtml(token)}</span>
+        </div>
+      </div>
+    `
+
+  } else {
+    // Outgoing: resolve token defensively from token map
+    let outToken = token
+    if (!/^\[[a-z]+_\d+\]$/.test(token)) {
+      const tmap = getTokenMap()
+      console.log(`[PII Shield] Tooltip fallback resolution. passed_token=${token}, map_size=${Object.keys(tmap).length}`);
+      for (const [tok, orig] of Object.entries(tmap)) {
+        if (orig === original || orig === token) {
+          outToken = tok
+          console.log(`[PII Shield] Resolved token from map: ${tok}`);
+          break
+        }
+      }
+    }
+    if (!/^\[[a-z]+_\d+\]$/.test(outToken)) {
+      console.warn(`[PII Shield] FAILED to resolve valid token for tooltip! outToken=${outToken}`);
+    }
+    tooltipDiv.innerHTML = `
+      <div class="pii-shield-tooltip-title">
+        ${isAutoReplace ? 'Auto Updated (Beta)' : 'Private Information Detected'}
+      </div>
+      <div class="pii-shield-tooltip-stats">
+        ${isAutoReplace ? `
+        <div class="stat">
+          <span class="value" style="color: ${TYPE_COLORS[type] || '#eceff4'}">Replaced to <span style="font-family: monospace; color: #eceff4;">${escapeHtml(outToken)}</span> to protect privacy</span>
+        </div>
+        ` : `
+        <div class="stat">
+          <span class="label">Type</span>
+          <span class="value" style="color: ${TYPE_COLORS[type] || '#eceff4'}">${type}</span>
+        </div>
+        <div class="stat">
+          <span class="label">Token</span>
+          <span class="value" style="font-family: monospace;">${escapeHtml(outToken)}</span>
+        </div>
+        `}
+      </div>
+      ${isAutoReplace ?
+        `<div class="pii-shield-tooltip-footer pii-ignore-btn" data-type="${type}" data-original="${escapeHtml(original)}" style="cursor: pointer; color: #ebcb8b; padding-top: 8px; font-weight: bold;">
+           Click here to IGNORE
+         </div>` :
+        '<div class="pii-shield-tooltip-footer">Click highlight to block only this instance</div>'
+      }
+    `
+  }
+  const TOP_OFFSET = 90
   const SIDE_MARGIN = 10
   const TOOLTIP_HEIGHT = 80
   let top = y - TOP_OFFSET < SIDE_MARGIN ? y + 16 : y - TOP_OFFSET
@@ -467,7 +672,7 @@ function scheduleHideTooltip() {
   if (tooltipHideTimer) clearTimeout(tooltipHideTimer)
   tooltipHideTimer = setTimeout(() => {
     hideTooltip()
-  }, 300)
+  }, 100)
 }
 
 export function hideTooltip() {
@@ -517,9 +722,12 @@ export function hideBlockWarning() {
 
 export function cleanup() {
   if (!state) return
-  const { highlightDiv, badgeDiv, tooltipDiv, warningDiv, inspectPanelDiv, inputEl, scrollSyncHandler, resizeObserver, warningTimer } = state
+  const { highlightDiv, badgeDiv, tooltipDiv, warningDiv, inspectPanelDiv, scrollListeners, resizeObserver, warningTimer } = state
 
-  if (scrollSyncHandler) inputEl.removeEventListener('scroll', scrollSyncHandler)
+  stopPositionLoop()
+  for (const { el, handler } of scrollListeners) {
+    el.removeEventListener('scroll', handler)
+  }
   if (resizeObserver) resizeObserver.disconnect()
   if (warningTimer) clearTimeout(warningTimer)
   highlightDiv.remove()
@@ -529,6 +737,8 @@ export function cleanup() {
   inspectPanelDiv.remove()
 
   state = null
+  lastInputRect = null
+  lastClipPath = ''
   panelOpen = false
   lastPanelData = null
   activeReplaceMode = 'original'
@@ -536,4 +746,33 @@ export function cleanup() {
 
 export function getState(): HighlightState | null {
   return state
+}
+
+export function hideBadge() {
+  if (state?.badgeDiv) {
+    state.badgeDiv.style.display = 'none'
+  }
+}
+
+/**
+ * Full UI cleanup: hides badge, tooltip, inspect panel, and clears highlight marks.
+ * Call this on message send, form submit, or any global "reset" event.
+ */
+export function cleanupAllUI() {
+  hideBadge()
+  hideTooltip()
+  hideInspectPanel()
+  if (state) {
+    state.highlightDiv.textContent = ''
+  }
+}
+
+/**
+ * Clear highlight layer content and hide badge (for post-send state).
+ */
+export function clearHighlightLayer() {
+  if (state) {
+    state.highlightDiv.textContent = ''
+  }
+  hideBadge()
 }

@@ -1,21 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "PII Shield",
+  "name": "Fegis",
   "version": "1.0.0",
-  "description": "Grammarly-style PII detection and masking for AI chats. Highlights private information and replaces it with safe tokens before sending.",
+  "description": "Detects and masks PII in AI chat inputs. Highlights sensitive data and replaces it with tokens or fake values. Runs entirely locally.",
   "icons": {
-    "16": "icons/icon-16.png",
-    "48": "icons/icon-48.png",
-    "128": "icons/icon-128.png"
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "PII Shield"
+    "default_title": "Fegis"
   },
   "permissions": [
     "storage",
     "activeTab",
-    "clipboardWrite"
+    "clipboardWrite",
+    "offscreen"
   ],
   "background": {
     "service_worker": "background.js"
@@ -30,16 +31,35 @@
         "*://grok.com/*",
         "*://x.com/i/grok*",
         "*://copilot.microsoft.com/*",
-        "*://chat.deepseek.com/*"
+        "*://chat.deepseek.com/*",
+        "*://www.perplexity.ai/*",
+        "*://perplexity.ai/*"
       ],
       "js": ["content.js"],
       "css": ["assets/highlight.css"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://chatgpt.com/*",
+        "*://chat.openai.com/*",
+        "*://gemini.google.com/*",
+        "*://claude.ai/*",
+        "*://grok.com/*",
+        "*://x.com/i/grok*",
+        "*://copilot.microsoft.com/*",
+        "*://chat.deepseek.com/*",
+        "*://www.perplexity.ai/*",
+        "*://perplexity.ai/*"
+      ],
+      "js": ["fetch-interceptor.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["assets/*", "model/*"],
+      "resources": ["assets/*", "fetch-interceptor.js", "pdf.worker.min.mjs", "model/*"],
       "matches": ["<all_urls>"]
     }
   ]
