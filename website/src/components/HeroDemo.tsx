@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import { analyzeText } from '@extension/detectors/engine'
 import { tokenize, clearTokens } from '@extension/tokens/manager'
 import { generateFake } from '@extension/tokens/fake-data'
@@ -38,7 +38,65 @@ const TYPE_BG: Record<PIIType, string> = {
   PATH: 'rgba(163,190,140,0.20)',
 }
 
-const PLACEHOLDER = 'Try typing: "Hi John, email me at john@example.com or call 555-123-4567. My SSN is 123-45-6789."'
+const PLACEHOLDER = 'Message AI assistant...'
+
+const SUGGESTIONS: { label: string; icon: string; content: string }[] = [
+  {
+    label: 'Name',
+    icon: '👤',
+    content: 'Hi, my name is Sarah Johnson — nice to meet you. Please reach out anytime.',
+  },
+  {
+    label: 'Email',
+    icon: '✉️',
+    content: 'Reach me at sarah.johnson@company.com for any inquiries.',
+  },
+  {
+    label: 'Phone',
+    icon: '📞',
+    content: 'Call me at (206) 555-8742 or text me at +1-206-555-8742 anytime.',
+  },
+  {
+    label: 'Credit Card',
+    icon: '💳',
+    content: 'Please charge my Visa: 4111 1111 1111 1111, exp 04/27, CVV 319.',
+  },
+  {
+    label: 'SSN + DOB',
+    icon: '🪪',
+    content: 'My SSN is 372-14-8562 and my date of birth is 03/15/1984.',
+  },
+  {
+    label: 'Address',
+    icon: '🏠',
+    content: 'Ship to 742 Evergreen Terrace, Springfield, IL 62701.',
+  },
+  {
+    label: 'API Key',
+    icon: '🔑',
+    content: 'Here is my API token: sk_live_xK3mNpQ2rYsT4uVwZa8bC9dEfGhIjKl',
+  },
+  {
+    label: 'URL',
+    icon: '🔗',
+    content: 'See the dashboard at https://app.example.com/settings?api_token=abc123xyz456&session_id=9182',
+  },
+  {
+    label: 'UUID / ID',
+    icon: '🔢',
+    content: 'Request trace ID: 550e8400-e29b-41d4-a716-446655440000',
+  },
+  {
+    label: 'File Path',
+    icon: '📁',
+    content: 'App crashed reading /etc/app/config.yml — see full trace at /var/log/app/error.log',
+  },
+  {
+    label: 'Log File',
+    icon: '📋',
+    content: '[2024-03-15 09:14:02] ERROR auth failed for user jsmith@corp.net from 192.168.1.42 — token_x9f2k8m3abc4def5ghi6jklm',
+  },
+]
 
 function HighlightedText({ text, matches }: { text: string; matches: PIIMatch[] }) {
   if (!text) return null
@@ -61,11 +119,12 @@ function HighlightedText({ text, matches }: { text: string; matches: PIIMatch[] 
         ) : (
           <mark
             key={i}
-            className="rounded px-0.5 border-b-2"
+            className="rounded border-b-2"
             style={{
               background: TYPE_BG[p.type] ?? 'rgba(129,161,193,0.22)',
               borderBottomColor: TYPE_BORDER[p.type] ?? '#81A1C1',
               color: 'inherit',
+              padding: 0,
             }}
             title={p.type}
           >
@@ -86,9 +145,19 @@ interface MappingEntry {
 export default function HeroDemo() {
   const [input, setInput] = useState('')
   const [redactMode, setRedactMode] = useState<'labels' | 'replaced'>('labels')
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  const syncScroll = useCallback(() => {
+    const ta = textareaRef.current
+    const ov = overlayRef.current
+    if (ta && ov) {
+      ov.scrollTop = ta.scrollTop
+      ov.scrollLeft = ta.scrollLeft
+    }
+  }, [])
 
   const { matches, maskedText, maskedMatches, replacedText, replacedMatches, hasPII, error, mappings } = useMemo(() => {
-    const trimmed = input.trim()
     const empty = {
       matches: [] as PIIMatch[],
       maskedText: '',
@@ -99,11 +168,11 @@ export default function HeroDemo() {
       error: null as string | null,
       mappings: [] as MappingEntry[],
     }
-    if (!trimmed) return empty
+    if (!input.trim()) return empty
     try {
       clearTokens()
-      const m = analyzeText(trimmed, DEFAULT_ENABLED_TYPES, [])
-      const result = tokenize(m, trimmed)
+      const m = analyzeText(input, DEFAULT_ENABLED_TYPES, [])
+      const result = tokenize(m, input)
 
       const seen = new Set<string>()
       const mappings: MappingEntry[] = []
@@ -122,7 +191,7 @@ export default function HeroDemo() {
       let mIdx = 0
       let mPos = 0
       for (const match of m) {
-        const before = trimmed.substring(mIdx, match.start)
+        const before = input.substring(mIdx, match.start)
         mPos += before.length
         const tokenKey = Object.entries(tokenMap).find(([, v]) => v === match.text)?.[0] ?? match.text
         const newStart = mPos
@@ -135,14 +204,14 @@ export default function HeroDemo() {
       const replacedMatches: PIIMatch[] = []
       let rIdx = 0
       for (const match of m) {
-        replaced += trimmed.substring(rIdx, match.start)
+        replaced += input.substring(rIdx, match.start)
         const fake = fakeMap.get(`${match.type}:${match.text}`) ?? match.text
         const newStart = replaced.length
         replaced += fake
         replacedMatches.push({ text: fake, type: match.type, start: newStart, end: replaced.length, score: match.score })
         rIdx = match.end
       }
-      replaced += trimmed.substring(rIdx)
+      replaced += input.substring(rIdx)
 
       return {
         matches: m,
@@ -161,48 +230,87 @@ export default function HeroDemo() {
 
   return (
     <div className="space-y-4 text-left select-text" style={{ pointerEvents: 'auto' }}>
-      <div className="relative">
-        <label htmlFor="hero-demo-input" className="block text-xs font-mono text-[#81A1C1] uppercase tracking-wider mb-2">
-          Type here — PII is detected in real time
-        </label>
+      {/* Suggestion chips — always visible */}
+      <div className="flex flex-wrap gap-2">
+        {SUGGESTIONS.map(({ label, icon, content }, i) => (
+          <button
+            key={i}
+            className={`flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 border transition-all cursor-pointer ${
+              input === content
+                ? 'bg-[#88C0D0]/15 border-[#88C0D0] text-[#88C0D0]'
+                : 'text-[#D8DEE9] bg-[#3B4252] border-[#434C5E] hover:border-[#88C0D0] hover:text-[#ECEFF4]'
+            }`}
+            onClick={() => setInput(content)}
+            title={content}
+          >
+            <span className="text-[11px]">{icon}</span>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Chat-style input with inline highlight overlay */}
+      <div className="relative rounded-2xl bg-[#2E3440] border border-[#434C5E] transition-colors">
+        {input && matches.length > 0 && (
+          <div
+            ref={overlayRef}
+            className="absolute inset-0 p-4 pr-14 rounded-2xl overflow-hidden pointer-events-none z-0 text-sm font-mono whitespace-pre-wrap break-words leading-relaxed"
+            aria-hidden
+            style={{ color: 'transparent' }}
+          >
+            <HighlightedText text={input} matches={matches} />
+          </div>
+        )}
         <textarea
+          ref={textareaRef}
           id="hero-demo-input"
-          className="w-full min-h-[100px] p-4 rounded-lg bg-[#2E3440] border border-[#434C5E] text-[#ECEFF4] placeholder-[#4C566A] font-mono text-sm resize-y focus:border-[#88C0D0] focus:ring-1 focus:ring-[#88C0D0] outline-none transition-colors relative z-[1] select-text"
+          className="w-full p-4 pr-14 rounded-2xl bg-transparent text-[#ECEFF4] text-sm font-mono resize-none outline-none select-text placeholder-[#4C566A] relative z-[1] caret-[#ECEFF4] whitespace-pre-wrap break-words leading-relaxed"
           placeholder={PLACEHOLDER}
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onScroll={syncScroll}
+          onInput={(e) => {
+            const el = e.target as HTMLTextAreaElement
+            el.style.height = '0'
+            el.style.height = `${Math.max(40, el.scrollHeight)}px`
+          }}
           spellCheck={false}
-          rows={3}
+          rows={1}
           aria-label="Type or paste text to see PII detection"
         />
+        <div className="absolute right-3 bottom-3 flex items-center gap-2 z-[2]">
+          {hasPII && (
+            <span className="text-[10px] font-semibold text-[#BF616A] bg-[#BF616A]/10 px-2 py-1 rounded-full">
+              {matches.length} PII
+            </span>
+          )}
+          <div
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+              input.trim() ? 'bg-[#88C0D0] text-[#2E3440]' : 'bg-[#3B4252] text-[#4C566A]'
+            }`}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 2L11 13" /><path d="M22 2L15 22L11 13L2 9L22 2Z" />
+            </svg>
+          </div>
+        </div>
       </div>
 
+      {/* Results */}
       {input.trim() && (
         <>
-          <div className="rounded-lg border border-[#434C5E] bg-[#2E3440] p-4">
-            <div className="text-xs font-mono text-[#81A1C1] uppercase tracking-wider mb-2 flex items-center gap-2">
-              <span>Live detection</span>
-              {hasPII && (
-                <span className="text-[#BF616A] font-semibold">
-                  {matches.length} PII item{matches.length !== 1 ? 's' : ''} found
-                </span>
-              )}
-            </div>
-            <p className="font-mono text-sm text-[#D8DEE9] whitespace-pre-wrap break-words leading-relaxed">
-              <HighlightedText text={input.trim()} matches={matches} />
-            </p>
-          </div>
-
           {hasPII && (
-            <div className="rounded-lg border border-[#88C0D0]/30 bg-[#2E3440] p-4">
+            <div className="rounded-xl border border-[#88C0D0]/30 bg-[#2E3440] p-4">
               <div className="text-xs font-mono text-[#88C0D0] uppercase tracking-wider mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 rounded-full bg-[#88C0D0]" />
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#88C0D0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
                   Safe to send
                 </div>
-                <div className="flex bg-[#3B4252] rounded-md p-0.5 gap-0.5">
+                <div className="flex bg-[#3B4252] rounded-lg p-0.5 gap-0.5">
                   <button
-                    className={`px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wider transition-all ${
+                    className={`px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-all ${
                       redactMode === 'labels'
                         ? 'bg-[#88C0D0]/20 text-[#88C0D0]'
                         : 'text-[#4C566A] hover:text-[#D8DEE9]'
@@ -212,7 +320,7 @@ export default function HeroDemo() {
                     Labels
                   </button>
                   <button
-                    className={`px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wider transition-all ${
+                    className={`px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-all ${
                       redactMode === 'replaced'
                         ? 'bg-[#88C0D0]/20 text-[#88C0D0]'
                         : 'text-[#4C566A] hover:text-[#D8DEE9]'
@@ -233,8 +341,12 @@ export default function HeroDemo() {
           )}
 
           {mappings.length > 0 && (
-            <div className="rounded-lg border border-[#434C5E] bg-[#2E3440] p-4">
-              <div className="text-xs font-mono text-[#81A1C1] uppercase tracking-wider mb-1">
+            <div className="rounded-xl border border-[#434C5E] bg-[#2E3440] p-4">
+              <div className="text-xs font-mono text-[#81A1C1] uppercase tracking-wider mb-1 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#81A1C1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" />
+                  <polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" />
+                </svg>
                 Replacement Map
               </div>
               <p className="text-[11px] text-[#4C566A] mb-3">Same value always maps to the same replacement.</p>
@@ -260,12 +372,6 @@ export default function HeroDemo() {
 
       {error && (
         <p className="text-[#BF616A] text-sm font-mono" role="alert">{error}</p>
-      )}
-
-      {!input.trim() && !error && (
-        <p className="text-[#4C566A] text-sm font-mono">
-          Type or paste text above. Names, emails, phones, SSNs, API keys, and more will be highlighted and redacted.
-        </p>
       )}
     </div>
   )

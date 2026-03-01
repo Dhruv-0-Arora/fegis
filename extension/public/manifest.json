@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "PII Shield",
+  "name": "Fegis",
   "version": "1.0.0",
   "description": "Grammarly-style PII detection and masking for AI chats. Highlights private information and replaces it with safe tokens before sending.",
   "icons": {
@@ -10,7 +10,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "PII Shield"
+    "default_title": "Fegis"
   },
   "permissions": [
     "storage",

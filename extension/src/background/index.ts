@@ -103,7 +103,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 })
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('[PII Shield] Extension installed')
+  console.log('[Fegis] Extension installed')
   chrome.storage.local.get('settings', (result) => {
     if (!result.settings) {
       chrome.storage.local.set({ settings: DEFAULT_SETTINGS })

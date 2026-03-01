@@ -42,7 +42,7 @@ function safeSendMessage(msg: Record<string, unknown>, cb?: (res: unknown) => vo
 function gracefulShutdown() {
   if (dead) return
   dead = true
-  console.log('[PII Shield] Extension context invalidated -- shutting down gracefully')
+  console.log('[Fegis] Extension context invalidated -- shutting down gracefully')
   cleanup()
   stopWatching()
   if (debounceTimer) clearTimeout(debounceTimer)

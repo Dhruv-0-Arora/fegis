@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Fehgis - Privacy by Default</title>
+<title>Fegis - Privacy by Default</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
@@ -25,10 +25,11 @@
             overflow-x: hidden;
         }
         .glass-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            background: rgba(59, 66, 82, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
         }
         .gradient-text {
             background: linear-gradient(90deg, #ECEFF4, #D8DEE9);
@@ -55,17 +56,37 @@
                 linear-gradient(to right, rgba(76, 86, 106, 0.08) 1px, transparent 1px),
                 linear-gradient(to bottom, rgba(76, 86, 106, 0.08) 1px, transparent 1px);
         }
+        .hero-bg {
+            background-color: #2E3440;
+        }
+        .glass-pill {
+            background: rgba(59, 66, 82, 0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .glass-btn {
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .glass-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(136,192,208,0.4);
+        }
         .code-typing {
             font-family: 'Monaco', 'Courier New', monospace;
         }
+        html { scroll-behavior: smooth; }
     </style>
 </head>
 <body class="selection:bg-[var(--accent-color)] selection:text-[#2E3440]">
-<nav class="fixed w-full z-50 top-0 border-b border-[var(--border-color)] bg-[#2E3440]/90 backdrop-blur-md">
+<nav class="fixed w-full z-50 top-0 border-b border-white/10 bg-[#2E3440]/70 backdrop-blur-xl">
 <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
 <div class="flex items-center gap-2">
 <span class="material-symbols-outlined text-[var(--accent-color)] text-2xl">shield_lock</span>
-<span class="font-bold tracking-tight text-lg text-[#ECEFF4]">Fehgis</span>
+<span class="font-bold tracking-tight text-lg text-[#ECEFF4]">Fegis</span>
 </div>
 <div class="hidden md:flex gap-8 text-sm text-[#D8DEE9] font-medium">
 <a class="hover:text-[#ECEFF4] transition-colors" href="#">How it Works</a>
@@ -77,32 +98,32 @@
             </a>
 </div>
 </nav>
-<header class="relative pt-32 pb-20 overflow-hidden grid-bg">
-<div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[var(--accent-secondary)] rounded-full blur-[180px] opacity-10 pointer-events-none"></div>
+<section id="demo" class="pt-24 pb-16 md:py-24 bg-[#2E3440] scroll-mt-20">
+<div class="max-w-4xl mx-auto px-6">
+<h2 class="text-2xl md:text-3xl font-bold text-[#ECEFF4] mb-6">Try Demo</h2>
+<div class="glass-card rounded-2xl p-8 shadow-2xl">
+<div id="hero-demo"></div>
+</div>
+</div>
+</section>
+<header class="relative min-h-screen pt-16 pb-24 overflow-hidden hero-bg">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[var(--accent-secondary)] rounded-full blur-[180px] opacity-15 pointer-events-none"></div>
 <div class="max-w-7xl mx-auto px-6 text-center relative z-10">
-<div class="inline-flex items-center gap-2 border border-[var(--border-color)] rounded-full px-3 py-1 mb-8 bg-[#3B4252]/50 backdrop-blur-sm">
+<div class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-8 glass-pill">
 <span class="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse"></span>
 <span class="text-xs font-mono text-[#D8DEE9] tracking-wide uppercase">v1.0 Now Available</span>
 </div>
-<h1 class="text-6xl md:text-8xl font-bold tracking-tighter mb-6 leading-tight text-[#ECEFF4]">
+<h1 class="text-6xl md:text-8xl font-bold tracking-tighter mb-6 leading-tight text-[#ECEFF4] drop-shadow-sm">
                 Privacy by <span class="text-[var(--accent-color)]">Default.</span>
 </h1>
-<p class="text-xl text-[#D8DEE9] max-w-2xl mx-auto mb-12 font-light leading-relaxed">
+<p class="text-xl text-[#D8DEE9] max-w-2xl mx-auto mb-12 font-light leading-relaxed drop-shadow-sm">
                 The local-first browser extension that intercepts secrets and PII before you hit send. No data ever leaves your device.
             </p>
 <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-20">
-<button class="bg-[var(--accent-color)] text-[#2E3440] px-8 py-4 rounded font-bold text-lg flex items-center gap-3 glow-btn">
+<button class="bg-[var(--accent-color)] text-[#2E3440] px-8 py-4 rounded-xl font-bold text-lg flex items-center gap-3 glow-btn shadow-lg">
 <span>Add to Chrome</span>
 <span class="material-symbols-outlined text-xl">download</span>
 </button>
-<button class="px-8 py-4 rounded border border-[var(--border-color)] text-[#D8DEE9] hover:text-[#ECEFF4] hover:border-[#D8DEE9] transition-all font-medium flex items-center gap-2">
-<span class="material-symbols-outlined text-xl">play_circle</span>
-                    Watch Demo
-                </button>
-</div>
-<div class="max-w-4xl mx-auto mt-12">
-<div class="glass-card rounded-xl p-8">
-<div id="hero-demo"></div>
 </div>
 </div>
 </div>
@@ -110,8 +131,8 @@
 <section class="py-24 bg-[#2E3440] relative">
 <div class="max-w-7xl mx-auto px-6">
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-<div class="p-8 border border-[#434C5E] rounded-lg feature-card-hover bg-[#3B4252] transition-all duration-300 group">
-<div class="w-12 h-12 rounded bg-[#2E3440] border border-[#434C5E] flex items-center justify-center mb-6 group-hover:border-[var(--accent-color)] transition-colors">
+<div class="p-8 rounded-2xl feature-card-hover transition-all duration-300 group border border-white/10 bg-[#3B4252]/60 backdrop-blur-xl">
+<div class="w-12 h-12 rounded-xl bg-[#2E3440]/80 border border-white/10 flex items-center justify-center mb-6 group-hover:border-[var(--accent-color)] transition-colors">
 <span class="material-symbols-outlined text-[#ECEFF4]">dns</span>
 </div>
 <h3 class="text-xl font-bold mb-3 text-[#ECEFF4]">Local-Only Detection</h3>
@@ -119,8 +140,8 @@
                         All scanning happens directly within your browser instance. No text ever leaves your machine to be processed.
                     </p>
 </div>
-<div class="p-8 border border-[#434C5E] rounded-lg feature-card-hover bg-[#3B4252] transition-all duration-300 group">
-<div class="w-12 h-12 rounded bg-[#2E3440] border border-[#434C5E] flex items-center justify-center mb-6 group-hover:border-[var(--accent-color)] transition-colors">
+<div class="p-8 rounded-2xl feature-card-hover transition-all duration-300 group border border-white/10 bg-[#3B4252]/60 backdrop-blur-xl">
+<div class="w-12 h-12 rounded-xl bg-[#2E3440]/80 border border-white/10 flex items-center justify-center mb-6 group-hover:border-[var(--accent-color)] transition-colors">
 <span class="material-symbols-outlined text-[#ECEFF4]">lock</span>
 </div>
 <h3 class="text-xl font-bold mb-3 text-[#ECEFF4]">Zero Data Leaks</h3>
@@ -128,8 +149,8 @@
                         Prevent accidental pastes of API keys, SSNs, and private tokens into ChatGPT, Reddit, or public forms.
                     </p>
 </div>
-<div class="p-8 border border-[#434C5E] rounded-lg feature-card-hover bg-[#3B4252] transition-all duration-300 group">
-<div class="w-12 h-12 rounded bg-[#2E3440] border border-[#434C5E] flex items-center justify-center mb-6 group-hover:border-[var(--accent-color)] transition-colors">
+<div class="p-8 rounded-2xl feature-card-hover transition-all duration-300 group border border-white/10 bg-[#3B4252]/60 backdrop-blur-xl">
+<div class="w-12 h-12 rounded-xl bg-[#2E3440]/80 border border-white/10 flex items-center justify-center mb-6 group-hover:border-[var(--accent-color)] transition-colors">
 <span class="material-symbols-outlined text-[#ECEFF4]">bolt</span>
 </div>
 <h3 class="text-xl font-bold mb-3 text-[#ECEFF4]">Instant Redaction</h3>
@@ -210,7 +231,7 @@
 </div>
 <div class="flex-1 space-y-8 pt-4">
 <p class="text-xl text-[#D8DEE9] font-light leading-relaxed">
-                        Fehgis is architected with a strict <span class="text-[#ECEFF4] font-medium">Local-First</span> philosophy. We do not have servers that process your text inputs.
+                        Fegis is architected with a strict <span class="text-[#ECEFF4] font-medium">Local-First</span> philosophy. We do not have servers that process your text inputs.
                     </p>
 <p class="text-xl text-[#D8DEE9] font-light leading-relaxed">
                         Regex pattern matching and Luhn algorithm checks happen entirely within the Chrome Extension sandbox on your machine.
@@ -246,10 +267,10 @@
 <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
 <div class="flex items-center gap-2">
 <span class="material-symbols-outlined text-[#4C566A]">shield_lock</span>
-<span class="font-bold text-[#4C566A]">Fehgis</span>
+<span class="font-bold text-[#4C566A]">Fegis</span>
 </div>
 <div class="text-sm text-[#4C566A]">
-                &copy; 2024 Fehgis. Open Source under MIT.
+                &copy; 2024 Fegis. Open Source under MIT.
             </div>
 <div class="flex gap-6">
 <a class="text-[#4C566A] hover:text-[#ECEFF4] transition-colors" href="#">GitHub</a>

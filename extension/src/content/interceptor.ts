@@ -82,7 +82,7 @@ function unmaskResponseElement(container: HTMLElement, _tokenMap: TokenMap) {
     if (unmasked !== original) {
       const span = document.createElement('span')
       span.className = 'pii-shield-unmasked'
-      span.title = 'Unmasked by PII Shield'
+      span.title = 'Unmasked by Fegis'
       span.textContent = unmasked
       textNode.parentNode?.replaceChild(span, textNode)
     }
