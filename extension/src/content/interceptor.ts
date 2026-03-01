@@ -228,7 +228,7 @@ function unmaskResponseElement(container: HTMLElement, _tokenMap: TokenMap) {
         const fakeVal = originalToFake[matchText] || '';
         span.className = 'pii-shield-unmasked';
         span.style.textDecoration = isAutoReplace ? 'underline dashed #a3be8c' : 'underline dashed #ebcb8b';
-        span.dataset.piiSentAs = fakeVal || token;
+        span.dataset.piiSentAs = isAutoReplace ? token : (fakeVal || token);
         span.dataset.piiToken = token;
         span.dataset.piiOriginal = matchText;
         span.dataset.piiType = piiType;
