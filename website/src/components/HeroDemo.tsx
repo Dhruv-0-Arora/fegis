@@ -229,28 +229,31 @@ export default function HeroDemo() {
   }, [input])
 
   return (
-    <div className="space-y-4 text-left select-text" style={{ pointerEvents: 'auto' }}>
-      {/* Suggestion chips — always visible */}
-      <div className="flex flex-wrap gap-2">
-        {SUGGESTIONS.map(({ label, icon, content }, i) => (
-          <button
-            key={i}
-            className={`flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 border transition-all cursor-pointer ${
-              input === content
-                ? 'bg-[#88C0D0]/15 border-[#88C0D0] text-[#88C0D0]'
-                : 'text-[#D8DEE9] bg-[#3B4252] border-[#434C5E] hover:border-[#88C0D0] hover:text-[#ECEFF4]'
-            }`}
-            onClick={() => setInput(content)}
-            title={content}
-          >
-            <span className="text-[11px]">{icon}</span>
-            {label}
-          </button>
-        ))}
+    <div className="space-y-6 text-left select-text" style={{ pointerEvents: 'auto' }}>
+      {/* Example buttons — separate from input */}
+      <div className="rounded-xl border border-[#434C5E] bg-[#3B4252]/40 backdrop-blur-sm p-4">
+        <p className="text-xs font-mono text-[#81A1C1] uppercase tracking-wider mb-3">Examples</p>
+        <div className="flex flex-wrap gap-2">
+          {SUGGESTIONS.map(({ label, icon, content }, i) => (
+            <button
+              key={i}
+              className={`flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 border transition-all cursor-pointer ${
+                input === content
+                  ? 'bg-[#88C0D0]/15 border-[#88C0D0] text-[#88C0D0]'
+                  : 'text-[#D8DEE9] bg-[#2E3440] border-[#434C5E] hover:border-[#88C0D0] hover:text-[#ECEFF4]'
+              }`}
+              onClick={() => setInput(content)}
+              title={content}
+            >
+              <span className="text-[11px]">{icon}</span>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Chat-style input with inline highlight overlay */}
-      <div className="relative rounded-2xl bg-[#2E3440] border border-[#434C5E] transition-colors">
+      {/* Message input — separate container */}
+      <div className="rounded-2xl bg-[#2E3440] border border-[#434C5E] transition-colors relative overflow-hidden">
         {input && matches.length > 0 && (
           <div
             ref={overlayRef}
@@ -296,21 +299,21 @@ export default function HeroDemo() {
         </div>
       </div>
 
-      {/* Results */}
+      {/* View mode toggle + output — separate from input */}
       {input.trim() && (
         <>
           {hasPII && (
-            <div className="rounded-xl border border-[#88C0D0]/30 bg-[#2E3440] p-4">
-              <div className="text-xs font-mono text-[#88C0D0] uppercase tracking-wider mb-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            <div className="space-y-4 pt-2 border-t border-[#434C5E]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono text-[#88C0D0] uppercase tracking-wider flex items-center gap-2">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#88C0D0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                   </svg>
-                  Safe to send
-                </div>
+                  Safe to send — view as:
+                </span>
                 <div className="flex bg-[#3B4252] rounded-lg p-0.5 gap-0.5">
                   <button
-                    className={`px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-all ${
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all ${
                       redactMode === 'labels'
                         ? 'bg-[#88C0D0]/20 text-[#88C0D0]'
                         : 'text-[#4C566A] hover:text-[#D8DEE9]'
@@ -320,7 +323,7 @@ export default function HeroDemo() {
                     Labels
                   </button>
                   <button
-                    className={`px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-all ${
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all ${
                       redactMode === 'replaced'
                         ? 'bg-[#88C0D0]/20 text-[#88C0D0]'
                         : 'text-[#4C566A] hover:text-[#D8DEE9]'
@@ -331,12 +334,14 @@ export default function HeroDemo() {
                   </button>
                 </div>
               </div>
-              <p className="font-mono text-sm text-[#D8DEE9] whitespace-pre-wrap break-words leading-relaxed">
+              <div className="rounded-xl border border-[#88C0D0]/30 bg-[#2E3440] p-4">
+                <p className="font-mono text-sm text-[#D8DEE9] whitespace-pre-wrap break-words leading-relaxed">
                 <HighlightedText
                   text={redactMode === 'labels' ? maskedText : replacedText}
                   matches={redactMode === 'labels' ? maskedMatches : replacedMatches}
                 />
-              </p>
+                </p>
+              </div>
             </div>
           )}
 
