@@ -21,9 +21,11 @@ for (const testCasesFile of testFiles) {
       if (m.type === 'FINANCIAL') return '[FINANCIAL]'; // includes CC, crypto
       if (m.type === 'SECRET') return '[API_KEY]'; // includes API keys
       if (m.type === 'ID') return '[ID_NUMBER]'; // includes UUID, VIN, Passport
-      if (m.type === 'PERSON') return '[NAME]';
-      if (m.type === 'LOCATION') return '[ADDRESS]';
+      if (m.type === 'NAME') return '[NAME]';
+      if (m.type === 'ADDRESS') return '[ADDRESS]';
+      if (m.type === 'URL') return '[URL]';
       if (m.type === 'DATE') return '[DATE_OF_BIRTH]';
+      if (m.type === 'PATH') return '[PATH]';
       return `[${m.type}]`;
     }));
 

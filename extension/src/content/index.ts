@@ -1,13 +1,14 @@
 import { detectSite } from './sites.ts'
 import { analyzeText } from '../detectors/engine.ts'
 import { createHighlightLayer, renderHighlights, cleanup, showTooltip, scheduleHide, setReplaceCallback, updateInspectPanelData, hideInspectPanel, resetActiveMode, hideTooltip, hideBadge, getState, cleanupAllUI } from './highlighter.ts'
-import { setCurrentMatches, setupInterceptor, setupResponseUnmasking } from './interceptor.ts'
+import { setCurrentMatches, setupInterceptor, setupResponseUnmasking, reapplyUnmasking } from './interceptor.ts'
 import { watchForInput, stopWatching } from './observer.ts'
 import { loadTokenMap, loadReplacementMap, getFakeReplacement, saveReplacementMap, saveTokenMap, getTokenMap, getReplacementMap, getTokenForMatch, getKnownFakeValues } from '../tokens/manager.ts'
 import type { PIIMatch, ExtensionSettings, PIIType } from '../types.ts'
 
 let enabled = true
 let autoReplace = false
+let activeMode: 'original' | 'labels' | 'replaced' = 'replaced'
 let enabledTypes: PIIType[] = ['NAME', 'EMAIL', 'PHONE', 'FINANCIAL', 'SSN', 'ID', 'ADDRESS', 'SECRET', 'URL', 'DATE', 'PATH']
 let customBlockList: string[] = []
 let ignoredTokens = new Set<string>()
@@ -62,7 +63,9 @@ function getInputText(el: HTMLElement): string {
 
 function syncReplacements() {
   const replacements = currentMatches.map(m => {
-    return { original: m.text, fake: autoReplace ? getTokenForMatch(m) : getFakeReplacement(m) };
+    // 'labels' (redacted) → send tokens like [address_1]; otherwise → send fake random values
+    const useTokens = activeMode === 'labels';
+    return { original: m.text, fake: useTokens ? getTokenForMatch(m) : getFakeReplacement(m) };
   });
   window.postMessage({
     source: 'PII_SHIELD_EXT',
@@ -70,7 +73,8 @@ function syncReplacements() {
     autoReplace,
     replacements
   }, '*');
-  if (autoReplace) saveTokenMap();
+  saveTokenMap();
+  saveReplacementMap();
 }
 
 /**
@@ -116,24 +120,33 @@ function processInput(el: HTMLElement) {
   if (text === lastProcessedText) return
 
   if (storedOriginalText !== null) {
-    const replacedText = lastProcessedText
-    let restoredText: string
-
-    if (text.length > replacedText.length && text.startsWith(replacedText)) {
-      restoredText = storedOriginalText + text.slice(replacedText.length)
-    } else if (text.length > replacedText.length && text.endsWith(replacedText)) {
-      restoredText = text.slice(0, text.length - replacedText.length) + storedOriginalText
+    // If the input was cleared (empty) or shrunk, the site cleared it after send.
+    // Do NOT restore the original text — just clean up stored state.
+    if (!text.trim() || text.length < lastProcessedText.length * 0.5) {
+      storedOriginalText = null
+      storedMatches = []
+      resetActiveMode()
+      lastProcessedText = text
     } else {
-      restoredText = storedOriginalText
+      const replacedText = lastProcessedText
+      let restoredText: string
+
+      if (text.length > replacedText.length && text.startsWith(replacedText)) {
+        restoredText = storedOriginalText + text.slice(replacedText.length)
+      } else if (text.length > replacedText.length && text.endsWith(replacedText)) {
+        restoredText = text.slice(0, text.length - replacedText.length) + storedOriginalText
+      } else {
+        restoredText = storedOriginalText
+      }
+
+      storedOriginalText = null
+      storedMatches = []
+      resetActiveMode()
+
+      text = restoredText
+      lastProcessedText = text
+      adapter.setInputText(el, text)
     }
-
-    storedOriginalText = null
-    storedMatches = []
-    resetActiveMode()
-
-    text = restoredText
-    lastProcessedText = text
-    adapter.setInputText(el, text)
   } else {
     lastProcessedText = text
   }
@@ -171,6 +184,7 @@ function debouncedProcess(el: HTMLElement) {
 
 function handleModeSwitch(mode: 'original' | 'labels' | 'replaced') {
   if (!currentInputEl) return
+  activeMode = mode
 
   if (storedOriginalText === null) {
     storedOriginalText = getInputText(currentInputEl)
@@ -389,7 +403,7 @@ function init() {
         e.clientX,
         e.clientY,
         piiType,
-        unmasked.dataset.piiToken,
+        unmasked.dataset.piiSentAs || unmasked.dataset.piiToken,
         unmasked.dataset.piiOriginal || unmasked.textContent || '',
         'incoming'
       )
@@ -481,6 +495,7 @@ try {
       enabledTypes = s.enabledTypes
       customBlockList = s.customBlockList || []
       syncReplacements()
+      reapplyUnmasking(autoReplace)
       if (currentInputEl) {
         lastProcessedText = ''
         processInput(currentInputEl)

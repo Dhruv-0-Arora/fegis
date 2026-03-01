@@ -22,7 +22,7 @@ if (isChatGPT || isGemini) {
   // -----------------------------------------------------
   const originalFetch = window.fetch;
   window.fetch = async function (...args) {
-    if (state.isAutoReplace && state.activeReplacements.length > 0) {
+    if (state.activeReplacements.length > 0) {
       if (args[1] && args[1].body && typeof args[1].body === 'string') {
         args[1].body = applyOutgoingReplacements(args[1].body);
       }
@@ -30,6 +30,9 @@ if (isChatGPT || isGemini) {
 
     const response = await originalFetch.apply(this, args);
 
+    // Incoming stream: only replace fake→original when autoReplace is ON.
+    // When OFF, the raw response (containing fakes/tokens) passes through unchanged
+    // and the DOM mutation observer handles display.
     if (state.isAutoReplace && state.activeReplacements.length > 0) {
       if (isChatGPT) {
         const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request)?.url || '';
@@ -54,7 +57,7 @@ if (isChatGPT || isGemini) {
   // -----------------------------------------------------
   const originalXHRSend = XMLHttpRequest.prototype.send;
   XMLHttpRequest.prototype.send = function (body: Document | XMLHttpRequestBodyInit | null | undefined) {
-    if (state.isAutoReplace && state.activeReplacements.length > 0) {
+    if (state.activeReplacements.length > 0) {
       if (typeof body === 'string') {
         body = applyOutgoingReplacements(body);
       }
@@ -73,7 +76,7 @@ if (isChatGPT || isGemini) {
     }
 
     send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
-      if (state.isAutoReplace && state.activeReplacements.length > 0) {
+      if (state.activeReplacements.length > 0) {
         if (typeof data === 'string') {
           data = applyOutgoingReplacements(data);
         }
